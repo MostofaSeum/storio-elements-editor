@@ -856,7 +856,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
                 <StylePanel
                   value={fieldStyle}
                   device={device}
-                  onDeviceChange={setDevice}
                   options={config.styles}
                   fonts={config.fonts}
                   isImage={isImageValue}

@@ -150,18 +150,19 @@ describe('StylePanel', async () => {
   const { renderToStaticMarkup } = await import('react-dom/server');
   const { StylePanel } = await import('../src/admin/StylePanel');
   const base = {
-    device: 'desktop' as const, onDeviceChange: () => undefined, onChange: () => undefined,
+    device: 'desktop' as const, onChange: () => undefined,
     onSave: async () => undefined, onReset: async () => undefined, isSaving: false, hasSavedStyle: false,
   };
 
-  it('shows colour presets, custom inputs and the device switch', () => {
+  it('shows colour presets and custom inputs, without its own device switch', () => {
     const html = renderToStaticMarkup(
       React.createElement(StylePanel, { ...base, value: undefined, isImage: false, options: { colors: { Brand: 'var(--brand)' }, fontSizes: { L: '2rem' } } })
     );
     expect(html).toContain('Brand');
     expect(html).toContain('type="color"');
     expect(html).toContain('>L<');
-    expect(html).toContain('Phone');
+    expect(html).toContain('Editing <strong class="text-white">Desktop</strong> styles.');
+    expect(html).not.toContain('aria-pressed');
     expect(html).not.toContain('>Image<');
   });
 
@@ -171,5 +172,6 @@ describe('StylePanel', async () => {
     );
     expect(html).toContain('>Image<');
     expect(html).toContain('inherited: 3rem');
+    expect(html).toContain('Editing <strong class="text-white">Phone</strong> styles.');
   });
 });

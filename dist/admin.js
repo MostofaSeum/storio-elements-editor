@@ -43,7 +43,7 @@ __export(admin_exports, {
 module.exports = __toCommonJS(admin_exports);
 
 // src/admin/CmsStudio.tsx
-var import_react8 = require("react");
+var import_react9 = require("react");
 var import_react_hot_toast5 = require("react-hot-toast");
 var import_lucide_react8 = require("lucide-react");
 
@@ -151,7 +151,7 @@ function useStudio() {
 }
 
 // src/admin/CanvasEditor.tsx
-var import_react7 = __toESM(require("react"));
+var import_react8 = __toESM(require("react"));
 var import_lucide_react7 = require("lucide-react");
 var import_react_hot_toast4 = __toESM(require("react-hot-toast"));
 
@@ -1955,6 +1955,7 @@ var SectionEditorForm = ({
 };
 
 // src/admin/StylePanel.tsx
+var import_react7 = __toESM(require("react"));
 var import_lucide_react6 = require("lucide-react");
 var import_jsx_runtime7 = require("react/jsx-runtime");
 var DEVICES = [
@@ -1994,7 +1995,6 @@ function pickerColor(value) {
 var StylePanel = ({
   value,
   device,
-  onDeviceChange,
   options,
   fonts,
   isImage,
@@ -2004,7 +2004,8 @@ var StylePanel = ({
   isSaving,
   hasSavedStyle
 }) => {
-  const styleDevice = DEVICES.find((d) => d.key === device)?.style ?? "desktop";
+  const currentDevice = DEVICES.find((d) => d.key === device) ?? DEVICES[0];
+  const styleDevice = currentDevice.style;
   const own = value?.[styleDevice] ?? {};
   const inherited = (key) => {
     for (const d of FALLBACK[styleDevice]) {
@@ -2086,27 +2087,14 @@ var StylePanel = ({
     ] });
   };
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-xs font-bold text-white", children: "Device" }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl", children: DEVICES.map((d) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-        "button",
-        {
-          type: "button",
-          onClick: () => onDeviceChange(d.key),
-          "aria-pressed": device === d.key,
-          className: `flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium ${device === d.key ? "bg-purple-900/80 text-purple-100 border border-purple-500/40" : "text-slate-400 hover:text-white"}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(d.icon, { className: "w-3.5 h-3.5" }),
-            d.label
-          ]
-        },
-        d.key
-      )) })
-    ] }),
-    styleDevice !== "desktop" && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("p", { className: "text-[11px] text-slate-400", children: [
-      "Empty values use the ",
-      styleDevice === "phone" ? "tablet or desktop" : "desktop",
-      " value."
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] text-slate-300", children: [
+      import_react7.default.createElement(currentDevice.icon, { className: "w-3.5 h-3.5 text-purple-300 shrink-0" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
+        "Editing ",
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { className: "text-white", children: currentDevice.label }),
+        " styles.",
+        styleDevice !== "desktop" ? ` Empty values use the ${styleDevice === "phone" ? "tablet or desktop" : "desktop"} value.` : " Switch device with the buttons above the preview."
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Typography", children: [
       colorRow("Colour", "color"),
@@ -2186,58 +2174,58 @@ var DEVICE_VIEWPORTS = {
 var CanvasEditor = ({ initialPage, onPageChange }) => {
   const { config, origins } = useStudio();
   const adapter = config.adapter;
-  const [activePage, setActivePage] = (0, import_react7.useState)(initialPage || config.pages[0]?.key || "");
-  (0, import_react7.useEffect)(() => {
+  const [activePage, setActivePage] = (0, import_react8.useState)(initialPage || config.pages[0]?.key || "");
+  (0, import_react8.useEffect)(() => {
     if (initialPage) setActivePage(initialPage);
   }, [initialPage]);
-  const [device, setDevice] = (0, import_react7.useState)("desktop");
-  const [isEditModeActive, setIsEditModeActive] = (0, import_react7.useState)(true);
-  const [iframeKey, setIframeKey] = (0, import_react7.useState)(0);
-  const [isLoadingIframe, setIsLoadingIframe] = (0, import_react7.useState)(true);
+  const [device, setDevice] = (0, import_react8.useState)("desktop");
+  const [isEditModeActive, setIsEditModeActive] = (0, import_react8.useState)(true);
+  const [iframeKey, setIframeKey] = (0, import_react8.useState)(0);
+  const [isLoadingIframe, setIsLoadingIframe] = (0, import_react8.useState)(true);
   const pageDef = findPage(config, activePage);
   const groupPage = pageDef ? groupPageOf(config, pageDef) : void 0;
   const recordPages = groupPage ? recordPagesOf(config, groupPage) : [];
-  const [activeItem, setActiveItem] = (0, import_react7.useState)(null);
-  const [itemsByPage, setItemsByPage] = (0, import_react7.useState)({});
-  const [recordDetail, setRecordDetail] = (0, import_react7.useState)(null);
-  const [isLoadingRecord, setIsLoadingRecord] = (0, import_react7.useState)(false);
-  const [recordTarget, setRecordTarget] = (0, import_react7.useState)(null);
+  const [activeItem, setActiveItem] = (0, import_react8.useState)(null);
+  const [itemsByPage, setItemsByPage] = (0, import_react8.useState)({});
+  const [recordDetail, setRecordDetail] = (0, import_react8.useState)(null);
+  const [isLoadingRecord, setIsLoadingRecord] = (0, import_react8.useState)(false);
+  const [recordTarget, setRecordTarget] = (0, import_react8.useState)(null);
   const isRecordOpen = Boolean(recordTarget);
   const globalPage = findGlobalPage(config);
-  const globalSections = import_react7.default.useMemo(
+  const globalSections = import_react8.default.useMemo(
     () => globalPage && globalPage.key !== activePage ? globalPage.sections : [],
     [globalPage, activePage]
   );
-  const availableSections = import_react7.default.useMemo(() => {
+  const availableSections = import_react8.default.useMemo(() => {
     const sections = [...pageDef?.sections ?? [], ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
     return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: import_lucide_react7.Database }, ...sections];
   }, [pageDef, globalSections, recordTarget, config.pages]);
   const pageSections = availableSections.filter((s) => !globalSections.includes(s));
-  const [activeSectionKey, setActiveSectionKey] = (0, import_react7.useState)(availableSections[0]?.key ?? "");
-  const [activeFieldPath, setActiveFieldPath] = (0, import_react7.useState)(null);
-  const hasUnsavedEdits = (0, import_react7.useRef)(false);
-  const activeSectionRef = (0, import_react7.useRef)(activeSectionKey);
+  const [activeSectionKey, setActiveSectionKey] = (0, import_react8.useState)(availableSections[0]?.key ?? "");
+  const [activeFieldPath, setActiveFieldPath] = (0, import_react8.useState)(null);
+  const hasUnsavedEdits = (0, import_react8.useRef)(false);
+  const activeSectionRef = (0, import_react8.useRef)(activeSectionKey);
   activeSectionRef.current = activeSectionKey;
-  const recordTargetRef = (0, import_react7.useRef)(recordTarget);
+  const recordTargetRef = (0, import_react8.useRef)(recordTarget);
   recordTargetRef.current = recordTarget;
-  const itemsRef = (0, import_react7.useRef)(itemsByPage);
+  const itemsRef = (0, import_react8.useRef)(itemsByPage);
   itemsRef.current = itemsByPage;
-  const [sectionDetail, setSectionDetail] = (0, import_react7.useState)(null);
-  const [isLoadingDetail, setIsLoadingDetail] = (0, import_react7.useState)(false);
-  const [isSectionListOpen, setIsSectionListOpen] = (0, import_react7.useState)(false);
+  const [sectionDetail, setSectionDetail] = (0, import_react8.useState)(null);
+  const [isLoadingDetail, setIsLoadingDetail] = (0, import_react8.useState)(false);
+  const [isSectionListOpen, setIsSectionListOpen] = (0, import_react8.useState)(false);
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
   const sectionPageDef = globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
   const sectionPage = sectionPageDef?.key ?? activePage;
   const listedGlobalSections = globalPage?.listOnEveryPage === false ? globalSections.filter((s) => s.key === activeSectionKey) : globalSections;
-  const iframeRef = (0, import_react7.useRef)(null);
-  const viewportContainerRef = (0, import_react7.useRef)(null);
-  const [containerSize, setContainerSize] = (0, import_react7.useState)({
+  const iframeRef = (0, import_react8.useRef)(null);
+  const viewportContainerRef = (0, import_react8.useRef)(null);
+  const [containerSize, setContainerSize] = (0, import_react8.useState)({
     width: 1e3,
     height: 800
   });
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!viewportContainerRef.current) return;
     const updateSize = () => {
       if (viewportContainerRef.current) {
@@ -2252,7 +2240,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     observer.observe(viewportContainerRef.current);
     return () => observer.disconnect();
   }, []);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!isLoadingIframe) return;
     const check = () => {
       try {
@@ -2280,13 +2268,13 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     editMode: isEditModeActive,
     cacheBust: iframeKey
   });
-  const sendToPreview = (0, import_react7.useCallback)(
+  const sendToPreview = (0, import_react8.useCallback)(
     (message) => {
       postCmsMessage(iframeRef.current?.contentWindow, message, origins);
     },
     [origins]
   );
-  const confirmLeavingSection = (0, import_react7.useCallback)(() => {
+  const confirmLeavingSection = (0, import_react8.useCallback)(() => {
     if (!hasUnsavedEdits.current) return true;
     if (!window.confirm("You have unsaved changes in this section. Leave without saving them?")) return false;
     hasUnsavedEdits.current = false;
@@ -2331,7 +2319,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     setIframeKey(Date.now());
   };
   const recordPagesKey = recordPages.map((p) => `${p.key}:${p.collection}`).join("|");
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     for (const page of recordPages) {
       const collection = page.collection;
       if (!adapter.listItems) {
@@ -2353,7 +2341,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       );
     }
   }, [recordPagesKey, adapter]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!pageDef?.collection || activeItem) return;
     const state = itemsByPage[pageDef.key];
     if (state?.status === "ready" && state.items.length > 0) {
@@ -2364,7 +2352,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       setIframeKey(Date.now());
     }
   }, [pageDef, activeItem, itemsByPage]);
-  const loadRecord = (0, import_react7.useCallback)(
+  const loadRecord = (0, import_react8.useCallback)(
     async (collection, id) => {
       if (!adapter.getItem) {
         import_react_hot_toast4.default.error("The storage adapter cannot load records (it has no getItem).");
@@ -2384,7 +2372,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     },
     [adapter]
   );
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!recordTarget) return;
     loadRecord(recordTarget.collection, recordTarget.id);
   }, [recordTarget, loadRecord]);
@@ -2397,12 +2385,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       { duration: 2500 }
     );
   };
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (availableSections.length > 0 && !availableSections.some((section) => section.key === activeSectionKey)) {
       setActiveSectionKey(availableSections[0].key);
     }
   }, [activePage, activeSectionKey, availableSections]);
-  const loadSectionData = (0, import_react7.useCallback)(
+  const loadSectionData = (0, import_react8.useCallback)(
     async (page, sectionKey) => {
       setIsLoadingDetail(true);
       try {
@@ -2416,7 +2404,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     },
     [adapter]
   );
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!sectionPageDef) return;
     const isSectionValid = availableSections.some((section) => section.key === activeSectionKey);
     if (activeSectionKey && isSectionValid && activeSectionKey !== RECORD_SECTION) {
@@ -2430,7 +2418,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     setIsSectionListOpen(false);
     if (sectionKey !== RECORD_SECTION) sendToPreview({ type: CMS_MESSAGE.SCROLL_TO_SECTION, sectionKey });
   };
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (origins.length === 0) return;
     return listenForCmsMessages(
       (message) => {
@@ -2516,12 +2504,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   };
   const stylesEnabled = config.styles?.enabled !== false;
   const isStyleTarget = stylesEnabled && Boolean(activeFieldPath) && activeSectionKey !== RECORD_SECTION;
-  const [formTab, setFormTab] = (0, import_react7.useState)("content");
-  const [styleSheet, setStyleSheet] = (0, import_react7.useState)(null);
-  const [fieldStyle, setFieldStyleDraft] = (0, import_react7.useState)(void 0);
-  const [isSavingStyle, setIsSavingStyle] = (0, import_react7.useState)(false);
+  const [formTab, setFormTab] = (0, import_react8.useState)("content");
+  const [styleSheet, setStyleSheet] = (0, import_react8.useState)(null);
+  const [fieldStyle, setFieldStyleDraft] = (0, import_react8.useState)(void 0);
+  const [isSavingStyle, setIsSavingStyle] = (0, import_react8.useState)(false);
   const showStyleTab = isStyleTarget && formTab === "style";
-  const loadStyleSheet = (0, import_react7.useCallback)(
+  const loadStyleSheet = (0, import_react8.useCallback)(
     async (page) => {
       const record = await adapter.getRecord(page, STYLES_KEY, { includeDrafts: true });
       const sheet = record?.content && typeof record.content === "object" ? record.content : {};
@@ -2530,7 +2518,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     },
     [adapter]
   );
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!isStyleTarget || !activeFieldPath) return;
     let alive = true;
     loadStyleSheet(sectionPage).then((sheet) => {
@@ -2540,7 +2528,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       alive = false;
     };
   }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react8.useEffect)(() => {
     if (!activeFieldPath) setFormTab("content");
   }, [activeFieldPath]);
   const savedFieldStyle = styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : void 0;
@@ -2588,7 +2576,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
       /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-2 flex-wrap", children: [
         /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
-          import_react7.default.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
+          import_react8.default.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
           /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
           /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
             "(",
@@ -2649,7 +2637,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                   rp.title,
                   ": no records yet"
                 ] }) : state.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
-                return recordPages.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_react7.default.Fragment, { children: options }, rp.key);
+                return recordPages.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_react8.default.Fragment, { children: options }, rp.key);
               })
             ]
           }
@@ -2757,7 +2745,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
           ),
           isSectionListOpen && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
-              (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_react7.default.Fragment, { children: [
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_react8.default.Fragment, { children: [
                 index === 1 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Globe, { className: "w-3 h-3" }),
                   /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Site-wide: shown on every page" })
@@ -2834,7 +2822,6 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             {
               value: fieldStyle,
               device,
-              onDeviceChange: setDevice,
               options: config.styles,
               fonts: config.fonts,
               isImage: isImageValue,
@@ -2966,11 +2953,11 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
 var import_jsx_runtime9 = require("react/jsx-runtime");
 function StudioContent({ config, initialPage, onPageChange }) {
   const firstPage = config.pages[0]?.key ?? "";
-  const [activePage, setActivePage] = (0, import_react8.useState)(
+  const [activePage, setActivePage] = (0, import_react9.useState)(
     initialPage && findPage(config, initialPage) ? initialPage : firstPage
   );
-  const [isGlobalPreviewOpen, setIsGlobalPreviewOpen] = (0, import_react8.useState)(false);
-  (0, import_react8.useEffect)(() => {
+  const [isGlobalPreviewOpen, setIsGlobalPreviewOpen] = (0, import_react9.useState)(false);
+  (0, import_react9.useEffect)(() => {
     if (initialPage && findPage(config, initialPage)) setActivePage(initialPage);
   }, [initialPage, config]);
   const changePage = (page) => {
@@ -3043,17 +3030,17 @@ var CmsNavButton = ({
 );
 
 // src/admin/CmsAuth.tsx
-var import_react9 = require("react");
+var import_react10 = require("react");
 var import_lucide_react10 = require("lucide-react");
 var import_jsx_runtime11 = require("react/jsx-runtime");
 function safeNext(value) {
   return value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : null;
 }
 var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirectTo = "/" }) => {
-  const [username, setUsername] = (0, import_react9.useState)("");
-  const [password, setPassword] = (0, import_react9.useState)("");
-  const [error, setError] = (0, import_react9.useState)("");
-  const [busy, setBusy] = (0, import_react9.useState)(false);
+  const [username, setUsername] = (0, import_react10.useState)("");
+  const [password, setPassword] = (0, import_react10.useState)("");
+  const [error, setError] = (0, import_react10.useState)("");
+  const [busy, setBusy] = (0, import_react10.useState)(false);
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -3100,9 +3087,9 @@ var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirect
   ] }) });
 };
 var CmsAuthGate = ({ auth, loginPath, title, children }) => {
-  const [state, setState] = (0, import_react9.useState)("checking");
-  const [message, setMessage] = (0, import_react9.useState)("");
-  const verify = (0, import_react9.useCallback)(async () => {
+  const [state, setState] = (0, import_react10.useState)("checking");
+  const [message, setMessage] = (0, import_react10.useState)("");
+  const verify = (0, import_react10.useCallback)(async () => {
     if (loginPath && window.location.pathname === loginPath) {
       setState("login-page");
       return;
@@ -3122,7 +3109,7 @@ var CmsAuthGate = ({ auth, loginPath, title, children }) => {
       setState("error");
     }
   }, [auth, loginPath]);
-  (0, import_react9.useEffect)(() => {
+  (0, import_react10.useEffect)(() => {
     void verify();
   }, [verify]);
   if (state === "in" || state === "login-page") return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children });

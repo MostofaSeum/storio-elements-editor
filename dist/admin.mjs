@@ -47,7 +47,7 @@ function useStudio() {
 }
 
 // src/admin/CanvasEditor.tsx
-import React7, { useState as useState7, useEffect as useEffect6, useRef as useRef3, useCallback } from "react";
+import React8, { useState as useState7, useEffect as useEffect6, useRef as useRef3, useCallback } from "react";
 import {
   Monitor as Monitor3,
   Tablet as Tablet3,
@@ -1775,6 +1775,7 @@ var SectionEditorForm = ({
 };
 
 // src/admin/StylePanel.tsx
+import React7 from "react";
 import { Monitor as Monitor2, Tablet as Tablet2, Smartphone as Smartphone2, RotateCcw as RotateCcw2, Save as Save2, Loader2 as Loader22, X as X5 } from "lucide-react";
 import { Fragment as Fragment3, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
 var DEVICES = [
@@ -1814,7 +1815,6 @@ function pickerColor(value) {
 var StylePanel = ({
   value,
   device,
-  onDeviceChange,
   options,
   fonts,
   isImage,
@@ -1824,7 +1824,8 @@ var StylePanel = ({
   isSaving,
   hasSavedStyle
 }) => {
-  const styleDevice = DEVICES.find((d) => d.key === device)?.style ?? "desktop";
+  const currentDevice = DEVICES.find((d) => d.key === device) ?? DEVICES[0];
+  const styleDevice = currentDevice.style;
   const own = value?.[styleDevice] ?? {};
   const inherited = (key) => {
     for (const d of FALLBACK[styleDevice]) {
@@ -1906,27 +1907,14 @@ var StylePanel = ({
     ] });
   };
   return /* @__PURE__ */ jsxs6("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
-    /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-2", children: [
-      /* @__PURE__ */ jsx7("span", { className: "text-xs font-bold text-white", children: "Device" }),
-      /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl", children: DEVICES.map((d) => /* @__PURE__ */ jsxs6(
-        "button",
-        {
-          type: "button",
-          onClick: () => onDeviceChange(d.key),
-          "aria-pressed": device === d.key,
-          className: `flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium ${device === d.key ? "bg-purple-900/80 text-purple-100 border border-purple-500/40" : "text-slate-400 hover:text-white"}`,
-          children: [
-            /* @__PURE__ */ jsx7(d.icon, { className: "w-3.5 h-3.5" }),
-            d.label
-          ]
-        },
-        d.key
-      )) })
-    ] }),
-    styleDevice !== "desktop" && /* @__PURE__ */ jsxs6("p", { className: "text-[11px] text-slate-400", children: [
-      "Empty values use the ",
-      styleDevice === "phone" ? "tablet or desktop" : "desktop",
-      " value."
+    /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] text-slate-300", children: [
+      React7.createElement(currentDevice.icon, { className: "w-3.5 h-3.5 text-purple-300 shrink-0" }),
+      /* @__PURE__ */ jsxs6("span", { children: [
+        "Editing ",
+        /* @__PURE__ */ jsx7("strong", { className: "text-white", children: currentDevice.label }),
+        " styles.",
+        styleDevice !== "desktop" ? ` Empty values use the ${styleDevice === "phone" ? "tablet or desktop" : "desktop"} value.` : " Switch device with the buttons above the preview."
+      ] })
     ] }),
     /* @__PURE__ */ jsxs6(Group, { title: "Typography", children: [
       colorRow("Colour", "color"),
@@ -2024,11 +2012,11 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const [recordTarget, setRecordTarget] = useState7(null);
   const isRecordOpen = Boolean(recordTarget);
   const globalPage = findGlobalPage(config);
-  const globalSections = React7.useMemo(
+  const globalSections = React8.useMemo(
     () => globalPage && globalPage.key !== activePage ? globalPage.sections : [],
     [globalPage, activePage]
   );
-  const availableSections = React7.useMemo(() => {
+  const availableSections = React8.useMemo(() => {
     const sections = [...pageDef?.sections ?? [], ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
@@ -2408,7 +2396,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     /* @__PURE__ */ jsxs7("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
       /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 flex-wrap", children: [
         /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
-          React7.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
+          React8.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
           /* @__PURE__ */ jsx8("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
           /* @__PURE__ */ jsxs7("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
             "(",
@@ -2469,7 +2457,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                   rp.title,
                   ": no records yet"
                 ] }) : state.items.map((item) => /* @__PURE__ */ jsx8("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
-                return recordPages.length > 1 ? /* @__PURE__ */ jsx8("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx8(React7.Fragment, { children: options }, rp.key);
+                return recordPages.length > 1 ? /* @__PURE__ */ jsx8("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx8(React8.Fragment, { children: options }, rp.key);
               })
             ]
           }
@@ -2577,7 +2565,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
           ),
           isSectionListOpen && /* @__PURE__ */ jsxs7(Fragment4, { children: [
             /* @__PURE__ */ jsx8("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
-              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs7(React7.Fragment, { children: [
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs7(React8.Fragment, { children: [
                 index === 1 && /* @__PURE__ */ jsxs7("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
                   /* @__PURE__ */ jsx8(Globe, { className: "w-3 h-3" }),
                   /* @__PURE__ */ jsx8("span", { children: "Site-wide: shown on every page" })
@@ -2654,7 +2642,6 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             {
               value: fieldStyle,
               device,
-              onDeviceChange: setDevice,
               options: config.styles,
               fonts: config.fonts,
               isImage: isImageValue,

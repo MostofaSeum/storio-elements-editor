@@ -8,9 +8,8 @@ type StyleDevice = keyof FieldStyle;
 export interface StylePanelProps {
   /** The field's current style (saved or being edited). */
   value: FieldStyle | undefined;
-  /** The studio's device; "mobile" edits the phone values. */
+  /** The studio's device (its Desktop / Tablet / Mobile buttons); "mobile" edits the phone values. */
   device: StudioDevice;
-  onDeviceChange: (device: StudioDevice) => void;
   options?: CmsStyleOptions;
   fonts?: string[];
   /** Shows the image group (fit, opacity). */
@@ -83,7 +82,6 @@ function pickerColor(value: string | undefined): string {
 export const StylePanel: React.FC<StylePanelProps> = ({
   value,
   device,
-  onDeviceChange,
   options,
   fonts,
   isImage,
@@ -93,7 +91,8 @@ export const StylePanel: React.FC<StylePanelProps> = ({
   isSaving,
   hasSavedStyle,
 }) => {
-  const styleDevice = DEVICES.find((d) => d.key === device)?.style ?? 'desktop';
+  const currentDevice = DEVICES.find((d) => d.key === device) ?? DEVICES[0];
+  const styleDevice = currentDevice.style;
   const own: StyleProps = value?.[styleDevice] ?? {};
 
   const inherited = (key: keyof StyleProps): string | undefined => {
@@ -215,28 +214,16 @@ export const StylePanel: React.FC<StylePanelProps> = ({
 
   return (
     <div className="space-y-3" data-cms-style-panel>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-white">Device</span>
-        <div className="flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl">
-          {DEVICES.map((d) => (
-            <button
-              key={d.key}
-              type="button"
-              onClick={() => onDeviceChange(d.key)}
-              aria-pressed={device === d.key}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium ${
-                device === d.key ? 'bg-purple-900/80 text-purple-100 border border-purple-500/40' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <d.icon className="w-3.5 h-3.5" />
-              {d.label}
-            </button>
-          ))}
-        </div>
+      {/* The device is chosen with the preview's Desktop / Tablet / Mobile buttons at the top. */}
+      <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] text-slate-300">
+        {React.createElement(currentDevice.icon, { className: 'w-3.5 h-3.5 text-purple-300 shrink-0' })}
+        <span>
+          Editing <strong className="text-white">{currentDevice.label}</strong> styles.
+          {styleDevice !== 'desktop'
+            ? ` Empty values use the ${styleDevice === 'phone' ? 'tablet or desktop' : 'desktop'} value.`
+            : ' Switch device with the buttons above the preview.'}
+        </span>
       </div>
-      {styleDevice !== 'desktop' && (
-        <p className="text-[11px] text-slate-400">Empty values use the {styleDevice === 'phone' ? 'tablet or desktop' : 'desktop'} value.</p>
-      )}
 
       <Group title="Typography">
         {colorRow('Colour', 'color')}
