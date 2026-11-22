@@ -59,8 +59,16 @@ interface FieldFrameProps {
   path: string;
   name: string;
   isEditMode: boolean;
-  onOpen: () => void;
+  onOpen: (kind: 'image' | 'text') => void;
   children: React.ReactNode;
+}
+
+/** "image" when the field shows media and no text of its own, so the studio offers image styles. */
+function fieldKindOf(wrapper: HTMLElement | null): 'image' | 'text' {
+  if (!wrapper) return 'text';
+  const media = wrapper.querySelector('img, picture, video, svg, canvas');
+  const text = (wrapper.textContent ?? '').trim();
+  return media && !text ? 'image' : 'text';
 }
 
 /** The hover outline and pencil shared by section fields and record fields. */
@@ -129,7 +137,7 @@ const FieldFrame: React.FC<FieldFrameProps> = ({ path, name, isEditMode, onOpen,
     e.preventDefault();
     e.stopPropagation();
     if (window.parent === window) return;
-    onOpen();
+    onOpen(fieldKindOf(wrapperRef.current));
   };
 
   // Only the innermost field under the mouse is active.
@@ -305,7 +313,7 @@ const SurroundedField: React.FC<{
       path={path}
       name={name}
       isEditMode={isEditMode}
-      onOpen={() =>
+      onOpen={(fieldKind) =>
         postCmsMessage(
           window.parent,
           {
@@ -314,6 +322,7 @@ const SurroundedField: React.FC<{
             ...(targetPage ? { page: targetPage } : {}),
             title: name,
             fieldPath: path,
+            fieldKind,
           },
           origins
         )
@@ -342,10 +351,10 @@ const OtherSectionField: React.FC<{ path: string; name: string; sectionKey: stri
       path={path}
       name={name}
       isEditMode={isEditMode}
-      onOpen={() =>
+      onOpen={(fieldKind) =>
         postCmsMessage(
           window.parent,
-          { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...(page ? { page } : {}), title: name, fieldPath: path },
+          { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...(page ? { page } : {}), title: name, fieldPath: path, fieldKind },
           origins
         )
       }

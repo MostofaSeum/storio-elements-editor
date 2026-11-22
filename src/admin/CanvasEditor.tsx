@@ -108,6 +108,8 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   const [activeSectionKey, setActiveSectionKey] = useState<string>(availableSections[0]?.key ?? '');
   // The single field opened with its own pencil. Null shows the whole section.
   const [activeFieldPath, setActiveFieldPath] = useState<string | null>(null);
+  // What the opened field shows, as reported by the preview ("image" gets image styles).
+  const [activeFieldKind, setActiveFieldKind] = useState<'image' | 'text' | null>(null);
   const hasUnsavedEdits = useRef(false);
   const activeSectionRef = useRef(activeSectionKey);
   activeSectionRef.current = activeSectionKey;
@@ -409,6 +411,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
         }
         if (message.sectionKey !== activeSectionRef.current && !confirmLeavingSection()) return;
         setActiveFieldPath(message.fieldPath ?? null);
+        setActiveFieldKind(message.fieldKind ?? null);
         setActiveSectionKey(message.sectionKey);
         toast.success(`Selected: ${message.title || message.sectionKey} in Editor`, {
           duration: 2000,
@@ -509,7 +512,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
 
   useEffect(() => {
-    if (!activeFieldPath) setFormTab('content');
+    if (!activeFieldPath) {
+      setFormTab('content');
+      setActiveFieldKind(null);
+    }
   }, [activeFieldPath]);
 
   const savedFieldStyle =
@@ -517,9 +523,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
 
   const handleStyleChange = (style: FieldStyle) => {
     if (!activeFieldPath) return;
-    setFieldStyleDraft(style);
+    const marked = withKind(style);
+    setFieldStyleDraft(marked);
     hasUnsavedEdits.current = true;
-    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style: marked });
   };
 
   /** Write this field's style (or remove it with null) into the page's "_styles" record. */
@@ -546,10 +553,19 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
 
   const fieldValue =
     activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : undefined;
+  // The preview reports what the clicked element shows; the value and name are the fallback.
   const isImageValue =
-    typeof fieldValue === 'string' &&
-    (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) ||
-      /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ''));
+    activeFieldKind === 'image' ||
+    (activeFieldKind === null &&
+      typeof fieldValue === 'string' &&
+      (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) ||
+        /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? '')));
+  const withKind = (style: FieldStyle): FieldStyle => {
+    const next: FieldStyle = { ...style };
+    if (isImageValue) next.kind = 'image';
+    else delete next.kind;
+    return next;
+  };
 
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
@@ -860,7 +876,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
                   fonts={config.fonts}
                   isImage={isImageValue}
                   onChange={handleStyleChange}
-                  onSave={() => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null)}
+                  onSave={() => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? withKind(fieldStyle) : null)}
                   onReset={() => writeFieldStyle(null)}
                   isSaving={isSavingStyle}
                   hasSavedStyle={hasFieldStyle(savedFieldStyle)}

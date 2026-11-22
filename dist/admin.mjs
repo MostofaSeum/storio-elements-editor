@@ -18,7 +18,7 @@ import {
   resolveSectionPage,
   setFieldStyle,
   trustedOrigins
-} from "./chunk-S5HJL5XS.mjs";
+} from "./chunk-OWX2RQ6L.mjs";
 
 // src/admin/CmsStudio.tsx
 import { useState as useState8, useEffect as useEffect7 } from "react";
@@ -1916,41 +1916,71 @@ var StylePanel = ({
         styleDevice !== "desktop" ? ` Empty values use the ${styleDevice === "phone" ? "tablet or desktop" : "desktop"} value.` : " Switch device with the buttons above the preview."
       ] })
     ] }),
-    /* @__PURE__ */ jsxs6(Group, { title: "Typography", children: [
-      colorRow("Colour", "color"),
-      row("Font size", "fontSize", /* @__PURE__ */ jsxs6(Fragment3, { children: [
-        presets("fontSize", options?.fontSizes),
-        textInput("fontSize", "e.g. 2rem or 32px")
-      ] })),
-      row("Weight", "fontWeight", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
-      fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
-      /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-2 gap-2", children: [
-        row("Line height", "lineHeight", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("lineHeight", "e.g. 1.4") })),
-        row("Letter spacing", "letterSpacing", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+    isImage ? /* @__PURE__ */ jsxs6(Fragment3, { children: [
+      /* @__PURE__ */ jsxs6(Group, { title: "Image size", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
+          row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
+          row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
+          row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
+        ] }),
+        row("Aspect ratio", "aspectRatio", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("aspectRatio", { Square: "1 / 1", "4:3": "4 / 3", "3:2": "3 / 2", "16:9": "16 / 9", Portrait: "3 / 4" }),
+          textInput("aspectRatio", "e.g. 16 / 9")
+        ] }))
       ] }),
-      row("Align", "textAlign", /* @__PURE__ */ jsx7(Fragment3, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
-    ] }),
-    /* @__PURE__ */ jsxs6(Group, { title: "Spacing", children: [
-      sides("margin"),
-      sides("padding")
-    ] }),
-    /* @__PURE__ */ jsx7(Group, { title: "Size", children: /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
-      row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
-      row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
-      row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
-    ] }) }),
-    /* @__PURE__ */ jsxs6(Group, { title: "Background & border", children: [
-      colorRow("Background", "backgroundColor"),
-      row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
-        presets("borderRadius", options?.radii),
-        textInput("borderRadius", "e.g. 12px")
-      ] })),
-      row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
-      colorRow("Border colour", "borderColor")
-    ] }),
-    isImage && /* @__PURE__ */ jsxs6(Group, { title: "Image", children: [
-      row("Fit", "objectFit", /* @__PURE__ */ jsx7(Fragment3, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
-      row("Opacity", "opacity", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("opacity", "0 to 1") }))
+      /* @__PURE__ */ jsxs6(Group, { title: "Fit & focus", children: [
+        row("Fit", "objectFit", /* @__PURE__ */ jsx7(Fragment3, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
+        row("Focus", "objectPosition", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("objectPosition", { Center: "center", Top: "top", Bottom: "bottom", Left: "left", Right: "right" }),
+          textInput("objectPosition", "e.g. 50% 20%")
+        ] })),
+        row("Opacity", "opacity", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("opacity", { "100%": "1", "75%": "0.75", "50%": "0.5", "25%": "0.25" }),
+          textInput("opacity", "0 to 1")
+        ] }))
+      ] }),
+      /* @__PURE__ */ jsxs6(Group, { title: "Corners & border", children: [
+        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("borderRadius", options?.radii),
+          textInput("borderRadius", "e.g. 12px")
+        ] })),
+        row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
+        colorRow("Border colour", "borderColor")
+      ] }),
+      /* @__PURE__ */ jsx7(Group, { title: "Spacing", children: sides("margin") })
+    ] }) : /* @__PURE__ */ jsxs6(Fragment3, { children: [
+      /* @__PURE__ */ jsxs6(Group, { title: "Typography", children: [
+        colorRow("Colour", "color"),
+        row("Font size", "fontSize", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("fontSize", options?.fontSizes),
+          textInput("fontSize", "e.g. 2rem or 32px")
+        ] })),
+        row("Weight", "fontWeight", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
+        fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
+        /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-2 gap-2", children: [
+          row("Line height", "lineHeight", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("lineHeight", "e.g. 1.4") })),
+          row("Letter spacing", "letterSpacing", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+        ] }),
+        row("Align", "textAlign", /* @__PURE__ */ jsx7(Fragment3, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
+      ] }),
+      /* @__PURE__ */ jsxs6(Group, { title: "Spacing", children: [
+        sides("margin"),
+        sides("padding")
+      ] }),
+      /* @__PURE__ */ jsx7(Group, { title: "Size", children: /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
+        row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
+        row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
+        row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
+      ] }) }),
+      /* @__PURE__ */ jsxs6(Group, { title: "Background & border", children: [
+        colorRow("Background", "backgroundColor"),
+        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+          presets("borderRadius", options?.radii),
+          textInput("borderRadius", "e.g. 12px")
+        ] })),
+        row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
+        colorRow("Border colour", "borderColor")
+      ] })
     ] }),
     /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
       /* @__PURE__ */ jsxs6(
@@ -2025,6 +2055,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const pageSections = availableSections.filter((s) => !globalSections.includes(s));
   const [activeSectionKey, setActiveSectionKey] = useState7(availableSections[0]?.key ?? "");
   const [activeFieldPath, setActiveFieldPath] = useState7(null);
+  const [activeFieldKind, setActiveFieldKind] = useState7(null);
   const hasUnsavedEdits = useRef3(false);
   const activeSectionRef = useRef3(activeSectionKey);
   activeSectionRef.current = activeSectionKey;
@@ -2270,6 +2301,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
         }
         if (message.sectionKey !== activeSectionRef.current && !confirmLeavingSection()) return;
         setActiveFieldPath(message.fieldPath ?? null);
+        setActiveFieldKind(message.fieldKind ?? null);
         setActiveSectionKey(message.sectionKey);
         toast4.success(`Selected: ${message.title || message.sectionKey} in Editor`, {
           duration: 2e3
@@ -2349,14 +2381,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     };
   }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
   useEffect6(() => {
-    if (!activeFieldPath) setFormTab("content");
+    if (!activeFieldPath) {
+      setFormTab("content");
+      setActiveFieldKind(null);
+    }
   }, [activeFieldPath]);
   const savedFieldStyle = styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : void 0;
   const handleStyleChange = (style) => {
     if (!activeFieldPath) return;
-    setFieldStyleDraft(style);
+    const marked = withKind(style);
+    setFieldStyleDraft(marked);
     hasUnsavedEdits.current = true;
-    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style: marked });
   };
   const writeFieldStyle = async (style) => {
     if (!activeFieldPath) return;
@@ -2378,7 +2414,13 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     }
   };
   const fieldValue = activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : void 0;
-  const isImageValue = typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
+  const isImageValue = activeFieldKind === "image" || activeFieldKind === null && typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
+  const withKind = (style) => {
+    const next = { ...style };
+    if (isImageValue) next.kind = "image";
+    else delete next.kind;
+    return next;
+  };
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
@@ -2646,7 +2688,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               fonts: config.fonts,
               isImage: isImageValue,
               onChange: handleStyleChange,
-              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null),
+              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? withKind(fieldStyle) : null),
               onReset: () => writeFieldStyle(null),
               isSaving: isSavingStyle,
               hasSavedStyle: hasFieldStyle(savedFieldStyle)

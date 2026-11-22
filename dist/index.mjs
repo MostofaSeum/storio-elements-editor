@@ -81,6 +81,8 @@ var CSS_NAMES = {
   borderWidth: "border-width",
   borderColor: "border-color",
   objectFit: "object-fit",
+  objectPosition: "object-position",
+  aspectRatio: "aspect-ratio",
   opacity: "opacity"
 };
 var STYLE_PROPERTIES = Object.keys(CSS_NAMES);
@@ -88,6 +90,7 @@ var BOX_PROPERTIES = [
   "width",
   "maxWidth",
   "height",
+  "aspectRatio",
   "marginTop",
   "marginBottom",
   "paddingTop",
@@ -96,6 +99,7 @@ var BOX_PROPERTIES = [
   "borderRadius",
   "borderWidth"
 ];
+var IMAGE_INNER = ["objectFit", "objectPosition"];
 var UNSAFE = /[;{}<>\\\r\n]/;
 function styleId(page, section, path) {
   return `${page}:${section}:${path}`;
@@ -116,16 +120,27 @@ function hasFieldStyle(style) {
   if (!style) return false;
   return ["desktop", "tablet", "phone"].some((d) => Object.keys(sanitizeStyleProps(style[d])).length > 0);
 }
-function declarations(props, wrapper) {
+function declarations(props, wrapper, skip = []) {
   let css = "";
   for (const key of STYLE_PROPERTIES) {
     const value = props[key];
-    if (value === void 0) continue;
+    if (value === void 0 || skip.includes(key)) continue;
     css += `${CSS_NAMES[key]}:${value};`;
     if (key === "borderWidth") css += "border-style:solid;";
   }
   if (wrapper && BOX_PROPERTIES.some((key) => props[key] !== void 0)) css += "display:inline-block;";
   return css;
+}
+function imageWrapperDeclarations(props) {
+  let outer = declarations(props, true, IMAGE_INNER);
+  if (outer.includes("display:inline-block;")) outer += "vertical-align:top;";
+  if (props.borderRadius !== void 0) outer += "overflow:hidden;";
+  let inner = "";
+  if (props.width !== void 0 || props.maxWidth !== void 0) inner += "width:100%;";
+  if (props.height !== void 0 || props.aspectRatio !== void 0) inner += "height:100%;";
+  for (const key of IMAGE_INNER) if (props[key] !== void 0) inner += `${CSS_NAMES[key]}:${props[key]};`;
+  if (props.borderRadius !== void 0) inner += `border-radius:${props.borderRadius};`;
+  return [outer, inner];
 }
 function fieldStyleToCss(id, style, options = {}) {
   if (!style) return "";
@@ -134,12 +149,19 @@ function fieldStyleToCss(id, style, options = {}) {
   const wrapper = options.wrapper ?? false;
   const tablet = options.breakpoints?.tablet ?? DEFAULT_BREAKPOINTS.tablet;
   const phone = options.breakpoints?.phone ?? DEFAULT_BREAKPOINTS.phone;
-  let css = "";
-  const desktop = declarations(sanitizeStyleProps(style.desktop), wrapper);
-  if (desktop) css += `${selector}{${desktop}}`;
+  const imageInWrapper = style.kind === "image" && wrapper;
+  const rules = (props) => {
+    if (!imageInWrapper) {
+      const body = declarations(props, wrapper);
+      return body ? `${selector}{${body}}` : "";
+    }
+    const [outer, inner] = imageWrapperDeclarations(props);
+    return (outer ? `${selector}{${outer}}` : "") + (inner ? `${selector} img{${inner}}` : "");
+  };
+  let css = rules(sanitizeStyleProps(style.desktop));
   for (const [device, width] of [["tablet", tablet], ["phone", phone]]) {
-    const body = declarations(sanitizeStyleProps(style[device]), wrapper);
-    if (body) css += `@media (max-width:${width - 0.02}px){${selector}{${body}}}`;
+    const body = rules(sanitizeStyleProps(style[device]));
+    if (body) css += `@media (max-width:${width - 0.02}px){${body}}`;
   }
   return css;
 }

@@ -17,7 +17,7 @@ import {
   styleId,
   themeToCss,
   trustedOrigins
-} from "./chunk-S5HJL5XS.mjs";
+} from "./chunk-OWX2RQ6L.mjs";
 
 // src/site/CmsProvider.tsx
 import { createContext, useContext, useEffect as useEffect3, useMemo, useState as useState2 } from "react";
@@ -463,6 +463,12 @@ function labelFromPath(path) {
   const words = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
+function fieldKindOf(wrapper) {
+  if (!wrapper) return "text";
+  const media = wrapper.querySelector("img, picture, video, svg, canvas");
+  const text = (wrapper.textContent ?? "").trim();
+  return media && !text ? "image" : "text";
+}
 var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
   const wrapperRef = useRef2(null);
   const pencilRef = useRef2(null);
@@ -517,7 +523,7 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
     e.preventDefault();
     e.stopPropagation();
     if (window.parent === window) return;
-    onOpen();
+    onOpen(fieldKindOf(wrapperRef.current));
   };
   const handleMouseOver = (e) => {
     const target = e.target;
@@ -655,14 +661,15 @@ var SurroundedField = ({ path, name, sectionKey, page: targetPage, isEditMode, o
       path,
       name,
       isEditMode,
-      onOpen: () => postCmsMessage(
+      onOpen: (fieldKind) => postCmsMessage(
         window.parent,
         {
           type: CMS_MESSAGE.EDIT_SECTION,
           sectionKey,
           ...targetPage ? { page: targetPage } : {},
           title: name,
-          fieldPath: path
+          fieldPath: path,
+          fieldKind
         },
         origins
       ),
@@ -686,9 +693,9 @@ var OtherSectionField = ({
       path,
       name,
       isEditMode,
-      onOpen: () => postCmsMessage(
+      onOpen: (fieldKind) => postCmsMessage(
         window.parent,
-        { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...page ? { page } : {}, title: name, fieldPath: path },
+        { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...page ? { page } : {}, title: name, fieldPath: path, fieldKind },
         origins
       ),
       children: /* @__PURE__ */ jsx4(StyledField, { page: stylePage, section: sectionKey, path, children })

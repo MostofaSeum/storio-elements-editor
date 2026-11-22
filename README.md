@@ -32,7 +32,7 @@ Safety rules (most important):
 
 Steps:
 1. Check the project: Next.js App Router (app/ or src/app/), TypeScript, Tailwind CSS v4, Node 18.18+. Find the admin panel (folders like admin, dashboard, or a route group like (admin)), and find out whether there is a Django backend (a folder with manage.py). Then list every page file under app/ or src/app/ (page.tsx, page.jsx or page.js) that visitors open, leaving out the admin area, api/, login and other auth pages, the CMS screen, and error or not-found pages. Write the list down with each page's URL: every page on it must be made editable in step 5. If package.json already lists @brainicon/visual-cms (the old name of this library), follow the README section "Upgrading from @brainicon/visual-cms" instead of steps 2 and 3, then continue with step 4.
-2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.3.1   then check: npx storio-editor --version
+2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.3.2   then check: npx storio-editor --version
 3. Set it up with `npx storio-editor init --yes --no-example` (--no-example: this is a real project, so do not create the demo page at /cms-example):
    - with Django: add --django-dir <folder with manage.py> (and --api-url / --frontend-origin if the ports are not 8000 / 3000). This also sets up Django: package, settings, urls, CORS, migration.
    - if the admin panel lives under app/, add --admin-path "<admin folder>/cms" so the CMS screen sits behind the admin login.
@@ -76,13 +76,13 @@ Steps:
 In your Next.js project:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.1
+npm install github:MostofaSeum/storio-elements-editor#v1.3.2
 ```
 
-`#v1.3.1` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
+`#v1.3.2` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
 
 ```bash
-npx storio-editor --version     # prints 1.3.1
+npx storio-editor --version     # prints 1.3.2
 ```
 
 ### Step 2. Run the setup command
@@ -302,7 +302,7 @@ Copy the prompt from [the top of this README](#let-your-ai-agent-do-it) into you
 **Step 3. Install the library.**
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.1
+npm install github:MostofaSeum/storio-elements-editor#v1.3.2
 npx storio-editor --version
 ```
 
@@ -602,7 +602,7 @@ With Django and `ALLOWED_PAGES` set, add `"site"` to it.
 
 ### Field styles (colour, size, spacing)
 
-When a field is opened with its own pencil, the form has two tabs: **Content** and **Style**. The Style tab changes the look of that one element: colour, font size, weight, line height, letter spacing, alignment, font, margin, padding, width, max width, height, background, corner radius, border, and for images fit and opacity. The preview changes as the editor works.
+When a field is opened with its own pencil, the form has two tabs: **Content** and **Style**. The Style tab changes the look of that one element: colour, font size, weight, line height, letter spacing, alignment, font, margin, padding, width, max width, height, background, corner radius and border. When the clicked element is an image (`img`, `picture`, `video` or `svg`, with no text), the tab shows image options instead: width, max width, height, aspect ratio, fit, focus point, opacity, corner radius, border and margin. The preview changes as the editor works.
 
 Every value can be picked from a preset or typed in (any CSS value: `#7c3aed`, `2rem`, `24px`, `50%`, `var(--color-brand-600)`). The preview's **Desktop / Tablet / Mobile** buttons choose which screen size the values are for, and the tab shows which one you are editing. Tablet and phone use the wider value until they get their own.
 
@@ -629,7 +629,7 @@ How it works:
 - A page's styles are saved as one record, `{ page, sectionKey: "_styles" }`, through the same storage adapter as the content. `_styles` is therefore a reserved section key. If you wrote your own storage adapter that only accepts known sections, let it accept `_styles` too.
 - Styles are published at once (Save & Publish). They have no drafts. **Reset styles** removes the field's style.
 - On the site, `<CmsField>` puts `data-cms-style="<page>:<section>:<path>"` on its element and writes the rules in a `<style>` just before it, with `@media` blocks for tablet and phone. The rules beat a single utility class (such as Tailwind's) without `!important`. A field without styles renders exactly as before.
-- When the field's child is a plain HTML element (`<h1>`, `<img>`, `<a>`), that element is styled. Text and custom components are wrapped in a `<span>`, only once they have a style. A wrapper that gets a size, vertical spacing or background becomes `inline-block`.
+- When the field's child is a plain HTML element (`<h1>`, `<img>`, `<a>`), that element is styled. Text and custom components are wrapped in a `<span>`, only once they have a style. A wrapper that gets a size, vertical spacing or background becomes `inline-block`. For an image inside a wrapper (for example Next.js `<Image>`), the wrapper takes size, corners and border and clips the image, and the `<img>` takes fit and focus.
 - The styles come with the page content loaded on the server (`getAllPageContent`), so visitors see no flash.
 - When the same section key is on several pages, add `page="<page key>"` to that `<CmsSection>`. Without it, the field finds its page from the URL after the page has loaded, and the styles appear a moment later.
 
@@ -796,7 +796,7 @@ A copy of each edited file is saved next to it as `*.storio-editor.bak`. Running
 You can also run the Django part on its own, without the Next.js part:
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.1#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.2#subdirectory=django-storio-elements-editor"
 python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000 [--dry-run] [--no-cors] [--no-migrate]
 ```
 
@@ -864,7 +864,7 @@ Add `<CmsLogoutButton auth={cmsLogin} redirectTo="/admin/login" />` to your admi
 
 #### By hand
 
-Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.1#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
+Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.2#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
 
 ### Your own backend
 
@@ -915,8 +915,8 @@ interface CmsStorageAdapter {
 | the sign-in form says "This account is not allowed to edit the site" | the account is not staff (or your `AUTHORIZE` function says no) | set `is_staff` on the user in the Django admin |
 | the sign-in form says "Too many failed attempts" | 5 wrong passwords for that username from this address | wait 5 minutes (`LOGIN_LOCKOUT_SECONDS`) |
 | the sign-in form says "Token login is not available on this server" | `django-storio-elements-editor` is older than 0.4 or `TOKEN_LOGIN` is `False` | upgrade the package ([section 9](#9-updating)); `npx storio-editor doctor` says which |
-| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.3.1` in the project root, then retry |
-| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.3.1` |
+| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.3.2` in the project root, then retry |
+| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.3.2` |
 | the CMS screen has no styling | the Tailwind `@source` line is missing or points to the wrong place, or Tailwind is v3 | open the CSS file your root layout imports; it must contain `@source "…/node_modules/@brainicon/storio-elements-editor/dist";` below `@import "tailwindcss";` |
 | the preview shows "Loading…" forever, or is blank | the page's `route` in `cms.config.ts` is wrong, the page throws an error, a redirect catches the preview, or the site blocks being framed | open the route in a normal tab; check `middleware.ts` ([below](#redirects-and-the-preview-iframe)); remove `X-Frame-Options: DENY` |
 | hovering shows no pencil | the block is not wrapped in `<CmsSection>`, `CmsProviders` is missing from the root layout, or Edit Mode is off | wrap the block; check `app/layout.tsx`; turn Edit Mode on in the toolbar |
@@ -1147,11 +1147,11 @@ if (!isCmsPreviewRequest(request, { studioPath: '/admin/cms' })) {
 Install a newer release by its tag, then restart the dev server:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.1     # use the new tag
+npm install github:MostofaSeum/storio-elements-editor#v1.3.2     # use the new tag
 rm -rf .next                                               # PowerShell: Remove-Item -Recurse -Force .next
 ```
 
-With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.1#subdirectory=django-storio-elements-editor"`.
+With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.2#subdirectory=django-storio-elements-editor"`.
 
 ### Upgrading from `@brainicon/visual-cms`
 

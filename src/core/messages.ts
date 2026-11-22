@@ -34,6 +34,8 @@ export type CmsMessage =
       page?: string;
       title?: string;
       fieldPath?: string;
+      /** What the clicked field shows, found from its element: an image, or text and the rest. */
+      fieldKind?: 'image' | 'text';
       /** Set when the field belongs to a collection record instead of a section. */
       collection?: string;
       item?: string;

@@ -55,6 +55,27 @@ describe('style model', () => {
     expect(fieldStyleToCss('home:hero:title', { desktop: { color: 'red' } }, { wrapper: true })).not.toContain('inline-block');
   });
 
+  it('styles an image element itself when it is the marked element', () => {
+    const css = fieldStyleToCss('home:hero:img', { kind: 'image', desktop: { borderRadius: '12px', objectFit: 'cover' } });
+    expect(css).toBe('[data-cms-style="home:hero:img"][data-cms-style="home:hero:img"]{border-radius:12px;object-fit:cover;}');
+  });
+
+  it('splits image styles between a wrapper and the img inside it', () => {
+    const css = fieldStyleToCss(
+      'home:hero:img',
+      { kind: 'image', desktop: { width: '300px', aspectRatio: '16 / 9', borderRadius: '9999px', objectFit: 'cover', objectPosition: 'top' }, phone: { width: '100%' } },
+      { wrapper: true }
+    );
+    const sel = '[data-cms-style="home:hero:img"][data-cms-style="home:hero:img"]';
+    expect(css).toContain(`${sel}{width:300px;border-radius:9999px;aspect-ratio:16 / 9;display:inline-block;vertical-align:top;overflow:hidden;}`);
+    expect(css).toContain(`${sel} img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:9999px;}`);
+    expect(css).toContain(`@media (max-width:767.98px){${sel}{width:100%;display:inline-block;vertical-align:top;}${sel} img{width:100%;}}`);
+  });
+
+  it('keeps text styles on the element even with kind missing', () => {
+    expect(fieldStyleToCss('a:b:c', { desktop: { objectFit: 'cover' } }, { wrapper: true })).not.toContain(' img{');
+  });
+
   it('escapes quotes in the id', () => {
     expect(fieldStyleToCss('a:b:c"d', { desktop: { color: 'red' } })).toContain('[data-cms-style="a:b:c\\"d"]');
   });
@@ -166,12 +187,17 @@ describe('StylePanel', async () => {
     expect(html).not.toContain('>Image<');
   });
 
-  it('shows the image group for images, and inherited values on phone', () => {
+  it('shows image options instead of text options for an image, and inherited values on phone', () => {
     const html = renderToStaticMarkup(
-      React.createElement(StylePanel, { ...base, device: 'mobile', value: { desktop: { fontSize: '3rem' } }, isImage: true })
+      React.createElement(StylePanel, { ...base, device: 'mobile', value: { kind: 'image', desktop: { width: '320px' } }, isImage: true })
     );
-    expect(html).toContain('>Image<');
-    expect(html).toContain('inherited: 3rem');
+    expect(html).toContain('Image size');
+    expect(html).toContain('Fit &amp; focus');
+    expect(html).toContain('Corners &amp; border');
+    expect(html).toContain('16:9');
+    expect(html).not.toContain('Typography');
+    expect(html).not.toContain('Font size');
+    expect(html).toContain('inherited: 320px');
     expect(html).toContain('Editing <strong class="text-white">Phone</strong> styles.');
   });
 });

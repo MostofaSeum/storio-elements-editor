@@ -35,6 +35,8 @@ const CSS_NAMES: Record<keyof StyleProps, string> = {
   borderWidth: 'border-width',
   borderColor: 'border-color',
   objectFit: 'object-fit',
+  objectPosition: 'object-position',
+  aspectRatio: 'aspect-ratio',
   opacity: 'opacity',
 };
 
@@ -42,9 +44,12 @@ export const STYLE_PROPERTIES = Object.keys(CSS_NAMES) as (keyof StyleProps)[];
 
 /** Properties that only work on a box, so a wrapper <span> needs display: inline-block for them. */
 const BOX_PROPERTIES: (keyof StyleProps)[] = [
-  'width', 'maxWidth', 'height', 'marginTop', 'marginBottom', 'paddingTop', 'paddingBottom',
+  'width', 'maxWidth', 'height', 'aspectRatio', 'marginTop', 'marginBottom', 'paddingTop', 'paddingBottom',
   'backgroundColor', 'borderRadius', 'borderWidth',
 ];
+
+/** Image properties that must be set on the <img> itself when the field's element is a wrapper. */
+const IMAGE_INNER: (keyof StyleProps)[] = ['objectFit', 'objectPosition'];
 
 /** Characters that could end the declaration or the <style> element. Editors type these values. */
 const UNSAFE = /[;{}<>\\\r\n]/;
@@ -74,16 +79,34 @@ export function hasFieldStyle(style: FieldStyle | undefined | null): boolean {
   return (['desktop', 'tablet', 'phone'] as const).some((d) => Object.keys(sanitizeStyleProps(style[d])).length > 0);
 }
 
-function declarations(props: StyleProps, wrapper: boolean): string {
+function declarations(props: StyleProps, wrapper: boolean, skip: (keyof StyleProps)[] = []): string {
   let css = '';
   for (const key of STYLE_PROPERTIES) {
     const value = props[key];
-    if (value === undefined) continue;
+    if (value === undefined || skip.includes(key)) continue;
     css += `${CSS_NAMES[key]}:${value};`;
     if (key === 'borderWidth') css += 'border-style:solid;';
   }
   if (wrapper && BOX_PROPERTIES.some((key) => props[key] !== undefined)) css += 'display:inline-block;';
   return css;
+}
+
+/**
+ * Rules for an image inside a wrapper: the wrapper takes size, corners, border and spacing and
+ * clips the image (so rounded corners cut it); the <img> fills a sized wrapper and takes fit and
+ * focus. Returns [wrapper declarations, img declarations].
+ */
+function imageWrapperDeclarations(props: StyleProps): [string, string] {
+  let outer = declarations(props, true, IMAGE_INNER);
+  // No gap under the image (inline-block boxes sit on the text baseline).
+  if (outer.includes('display:inline-block;')) outer += 'vertical-align:top;';
+  if (props.borderRadius !== undefined) outer += 'overflow:hidden;';
+  let inner = '';
+  if (props.width !== undefined || props.maxWidth !== undefined) inner += 'width:100%;';
+  if (props.height !== undefined || props.aspectRatio !== undefined) inner += 'height:100%;';
+  for (const key of IMAGE_INNER) if (props[key] !== undefined) inner += `${CSS_NAMES[key]}:${props[key]};`;
+  if (props.borderRadius !== undefined) inner += `border-radius:${props.borderRadius};`;
+  return [outer, inner];
 }
 
 /**
@@ -102,12 +125,19 @@ export function fieldStyleToCss(
   const wrapper = options.wrapper ?? false;
   const tablet = options.breakpoints?.tablet ?? DEFAULT_BREAKPOINTS.tablet;
   const phone = options.breakpoints?.phone ?? DEFAULT_BREAKPOINTS.phone;
-  let css = '';
-  const desktop = declarations(sanitizeStyleProps(style.desktop), wrapper);
-  if (desktop) css += `${selector}{${desktop}}`;
+  const imageInWrapper = style.kind === 'image' && wrapper;
+  const rules = (props: StyleProps): string => {
+    if (!imageInWrapper) {
+      const body = declarations(props, wrapper);
+      return body ? `${selector}{${body}}` : '';
+    }
+    const [outer, inner] = imageWrapperDeclarations(props);
+    return (outer ? `${selector}{${outer}}` : '') + (inner ? `${selector} img{${inner}}` : '');
+  };
+  let css = rules(sanitizeStyleProps(style.desktop));
   for (const [device, width] of [['tablet', tablet], ['phone', phone]] as const) {
-    const body = declarations(sanitizeStyleProps(style[device]), wrapper);
-    if (body) css += `@media (max-width:${width - 0.02}px){${selector}{${body}}}`;
+    const body = rules(sanitizeStyleProps(style[device]));
+    if (body) css += `@media (max-width:${width - 0.02}px){${body}}`;
   }
   return css;
 }

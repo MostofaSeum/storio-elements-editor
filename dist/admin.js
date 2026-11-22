@@ -247,6 +247,8 @@ var CSS_NAMES = {
   borderWidth: "border-width",
   borderColor: "border-color",
   objectFit: "object-fit",
+  objectPosition: "object-position",
+  aspectRatio: "aspect-ratio",
   opacity: "opacity"
 };
 var STYLE_PROPERTIES = Object.keys(CSS_NAMES);
@@ -2096,41 +2098,71 @@ var StylePanel = ({
         styleDevice !== "desktop" ? ` Empty values use the ${styleDevice === "phone" ? "tablet or desktop" : "desktop"} value.` : " Switch device with the buttons above the preview."
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Typography", children: [
-      colorRow("Colour", "color"),
-      row("Font size", "fontSize", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-        presets("fontSize", options?.fontSizes),
-        textInput("fontSize", "e.g. 2rem or 32px")
-      ] })),
-      row("Weight", "fontWeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
-      fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-2 gap-2", children: [
-        row("Line height", "lineHeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("lineHeight", "e.g. 1.4") })),
-        row("Letter spacing", "letterSpacing", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+    isImage ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Image size", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
+          row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
+          row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
+          row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
+        ] }),
+        row("Aspect ratio", "aspectRatio", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("aspectRatio", { Square: "1 / 1", "4:3": "4 / 3", "3:2": "3 / 2", "16:9": "16 / 9", Portrait: "3 / 4" }),
+          textInput("aspectRatio", "e.g. 16 / 9")
+        ] }))
       ] }),
-      row("Align", "textAlign", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Spacing", children: [
-      sides("margin"),
-      sides("padding")
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Group, { title: "Size", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
-      row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
-      row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
-      row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Background & border", children: [
-      colorRow("Background", "backgroundColor"),
-      row("Corner radius", "borderRadius", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-        presets("borderRadius", options?.radii),
-        textInput("borderRadius", "e.g. 12px")
-      ] })),
-      row("Border width", "borderWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("borderWidth", "e.g. 1px") })),
-      colorRow("Border colour", "borderColor")
-    ] }),
-    isImage && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Image", children: [
-      row("Fit", "objectFit", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
-      row("Opacity", "opacity", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("opacity", "0 to 1") }))
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Fit & focus", children: [
+        row("Fit", "objectFit", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
+        row("Focus", "objectPosition", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("objectPosition", { Center: "center", Top: "top", Bottom: "bottom", Left: "left", Right: "right" }),
+          textInput("objectPosition", "e.g. 50% 20%")
+        ] })),
+        row("Opacity", "opacity", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("opacity", { "100%": "1", "75%": "0.75", "50%": "0.5", "25%": "0.25" }),
+          textInput("opacity", "0 to 1")
+        ] }))
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Corners & border", children: [
+        row("Corner radius", "borderRadius", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("borderRadius", options?.radii),
+          textInput("borderRadius", "e.g. 12px")
+        ] })),
+        row("Border width", "borderWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("borderWidth", "e.g. 1px") })),
+        colorRow("Border colour", "borderColor")
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Group, { title: "Spacing", children: sides("margin") })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Typography", children: [
+        colorRow("Colour", "color"),
+        row("Font size", "fontSize", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("fontSize", options?.fontSizes),
+          textInput("fontSize", "e.g. 2rem or 32px")
+        ] })),
+        row("Weight", "fontWeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
+        fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-2 gap-2", children: [
+          row("Line height", "lineHeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("lineHeight", "e.g. 1.4") })),
+          row("Letter spacing", "letterSpacing", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+        ] }),
+        row("Align", "textAlign", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Spacing", children: [
+        sides("margin"),
+        sides("padding")
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Group, { title: "Size", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
+        row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
+        row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
+        row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Background & border", children: [
+        colorRow("Background", "backgroundColor"),
+        row("Corner radius", "borderRadius", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+          presets("borderRadius", options?.radii),
+          textInput("borderRadius", "e.g. 12px")
+        ] })),
+        row("Border width", "borderWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("borderWidth", "e.g. 1px") })),
+        colorRow("Border colour", "borderColor")
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
@@ -2205,6 +2237,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const pageSections = availableSections.filter((s) => !globalSections.includes(s));
   const [activeSectionKey, setActiveSectionKey] = (0, import_react8.useState)(availableSections[0]?.key ?? "");
   const [activeFieldPath, setActiveFieldPath] = (0, import_react8.useState)(null);
+  const [activeFieldKind, setActiveFieldKind] = (0, import_react8.useState)(null);
   const hasUnsavedEdits = (0, import_react8.useRef)(false);
   const activeSectionRef = (0, import_react8.useRef)(activeSectionKey);
   activeSectionRef.current = activeSectionKey;
@@ -2450,6 +2483,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
         }
         if (message.sectionKey !== activeSectionRef.current && !confirmLeavingSection()) return;
         setActiveFieldPath(message.fieldPath ?? null);
+        setActiveFieldKind(message.fieldKind ?? null);
         setActiveSectionKey(message.sectionKey);
         import_react_hot_toast4.default.success(`Selected: ${message.title || message.sectionKey} in Editor`, {
           duration: 2e3
@@ -2529,14 +2563,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     };
   }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
   (0, import_react8.useEffect)(() => {
-    if (!activeFieldPath) setFormTab("content");
+    if (!activeFieldPath) {
+      setFormTab("content");
+      setActiveFieldKind(null);
+    }
   }, [activeFieldPath]);
   const savedFieldStyle = styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : void 0;
   const handleStyleChange = (style) => {
     if (!activeFieldPath) return;
-    setFieldStyleDraft(style);
+    const marked = withKind(style);
+    setFieldStyleDraft(marked);
     hasUnsavedEdits.current = true;
-    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style: marked });
   };
   const writeFieldStyle = async (style) => {
     if (!activeFieldPath) return;
@@ -2558,7 +2596,13 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     }
   };
   const fieldValue = activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : void 0;
-  const isImageValue = typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
+  const isImageValue = activeFieldKind === "image" || activeFieldKind === null && typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
+  const withKind = (style) => {
+    const next = { ...style };
+    if (isImageValue) next.kind = "image";
+    else delete next.kind;
+    return next;
+  };
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
@@ -2826,7 +2870,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               fonts: config.fonts,
               isImage: isImageValue,
               onChange: handleStyleChange,
-              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null),
+              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? withKind(fieldStyle) : null),
               onReset: () => writeFieldStyle(null),
               isSaving: isSavingStyle,
               hasSavedStyle: hasFieldStyle(savedFieldStyle)

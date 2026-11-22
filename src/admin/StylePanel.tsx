@@ -3,7 +3,7 @@ import { Monitor, Tablet, Smartphone, RotateCcw, Save, Loader2, X } from 'lucide
 import type { CmsStyleOptions, FieldStyle, StyleProps } from '../core/types';
 
 export type StudioDevice = 'desktop' | 'tablet' | 'mobile';
-type StyleDevice = keyof FieldStyle;
+type StyleDevice = 'desktop' | 'tablet' | 'phone';
 
 export interface StylePanelProps {
   /** The field's current style (saved or being edited). */
@@ -12,7 +12,7 @@ export interface StylePanelProps {
   device: StudioDevice;
   options?: CmsStyleOptions;
   fonts?: string[];
-  /** Shows the image group (fit, opacity). */
+  /** An image: shows image size, fit and focus, corners and border instead of the text options. */
   isImage: boolean;
   onChange: (style: FieldStyle) => void;
   onSave: () => Promise<void>;
@@ -225,45 +225,72 @@ export const StylePanel: React.FC<StylePanelProps> = ({
         </span>
       </div>
 
-      <Group title="Typography">
-        {colorRow('Colour', 'color')}
-        {row('Font size', 'fontSize', <>{presets('fontSize', options?.fontSizes)}
-          {textInput('fontSize', 'e.g. 2rem or 32px')}</>)}
-        {row('Weight', 'fontWeight', <>{presets('fontWeight', { Light: '300', Regular: '400', Medium: '500', Semibold: '600', Bold: '700', Black: '800' })}</>)}
-        {fonts && fonts.length > 0 && row('Font', 'fontFamily', <>{presets('fontFamily', Object.fromEntries(fonts.map((f) => [f, f])))}</>)}
-        <div className="grid grid-cols-2 gap-2">
-          {row('Line height', 'lineHeight', <>{textInput('lineHeight', 'e.g. 1.4')}</>)}
-          {row('Letter spacing', 'letterSpacing', <>{textInput('letterSpacing', 'e.g. 0.02em')}</>)}
-        </div>
-        {row('Align', 'textAlign', <>{presets('textAlign', { Left: 'left', Center: 'center', Right: 'right', Justify: 'justify' })}</>)}
-      </Group>
+      {isImage ? (
+        <>
+          {/* An image: size, crop, corners and frame. Text options do not apply. */}
+          <Group title="Image size">
+            <div className="grid grid-cols-3 gap-2">
+              {row('Width', 'width', <>{textInput('width', 'auto')}</>)}
+              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'none')}</>)}
+              {row('Height', 'height', <>{textInput('height', 'auto')}</>)}
+            </div>
+            {row('Aspect ratio', 'aspectRatio', <>{presets('aspectRatio', { Square: '1 / 1', '4:3': '4 / 3', '3:2': '3 / 2', '16:9': '16 / 9', Portrait: '3 / 4' })}
+              {textInput('aspectRatio', 'e.g. 16 / 9')}</>)}
+          </Group>
 
-      <Group title="Spacing">
-        {sides('margin')}
-        {sides('padding')}
-      </Group>
+          <Group title="Fit & focus">
+            {row('Fit', 'objectFit', <>{presets('objectFit', { Cover: 'cover', Contain: 'contain', Fill: 'fill', None: 'none' })}</>)}
+            {row('Focus', 'objectPosition', <>{presets('objectPosition', { Center: 'center', Top: 'top', Bottom: 'bottom', Left: 'left', Right: 'right' })}
+              {textInput('objectPosition', 'e.g. 50% 20%')}</>)}
+            {row('Opacity', 'opacity', <>{presets('opacity', { '100%': '1', '75%': '0.75', '50%': '0.5', '25%': '0.25' })}
+              {textInput('opacity', '0 to 1')}</>)}
+          </Group>
 
-      <Group title="Size">
-        <div className="grid grid-cols-3 gap-2">
-          {row('Width', 'width', <>{textInput('width', 'auto')}</>)}
-          {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'none')}</>)}
-          {row('Height', 'height', <>{textInput('height', 'auto')}</>)}
-        </div>
-      </Group>
+          <Group title="Corners & border">
+            {row('Corner radius', 'borderRadius', <>{presets('borderRadius', options?.radii)}
+              {textInput('borderRadius', 'e.g. 12px')}</>)}
+            {row('Border width', 'borderWidth', <>{textInput('borderWidth', 'e.g. 1px')}</>)}
+            {colorRow('Border colour', 'borderColor')}
+          </Group>
 
-      <Group title="Background & border">
-        {colorRow('Background', 'backgroundColor')}
-        {row('Corner radius', 'borderRadius', <>{presets('borderRadius', options?.radii)}
-          {textInput('borderRadius', 'e.g. 12px')}</>)}
-        {row('Border width', 'borderWidth', <>{textInput('borderWidth', 'e.g. 1px')}</>)}
-        {colorRow('Border colour', 'borderColor')}
-      </Group>
+          <Group title="Spacing">{sides('margin')}</Group>
+        </>
+      ) : (
+        <>
+          <Group title="Typography">
+            {colorRow('Colour', 'color')}
+            {row('Font size', 'fontSize', <>{presets('fontSize', options?.fontSizes)}
+              {textInput('fontSize', 'e.g. 2rem or 32px')}</>)}
+            {row('Weight', 'fontWeight', <>{presets('fontWeight', { Light: '300', Regular: '400', Medium: '500', Semibold: '600', Bold: '700', Black: '800' })}</>)}
+            {fonts && fonts.length > 0 && row('Font', 'fontFamily', <>{presets('fontFamily', Object.fromEntries(fonts.map((f) => [f, f])))}</>)}
+            <div className="grid grid-cols-2 gap-2">
+              {row('Line height', 'lineHeight', <>{textInput('lineHeight', 'e.g. 1.4')}</>)}
+              {row('Letter spacing', 'letterSpacing', <>{textInput('letterSpacing', 'e.g. 0.02em')}</>)}
+            </div>
+            {row('Align', 'textAlign', <>{presets('textAlign', { Left: 'left', Center: 'center', Right: 'right', Justify: 'justify' })}</>)}
+          </Group>
 
-      {isImage && (
-        <Group title="Image">
-          {row('Fit', 'objectFit', <>{presets('objectFit', { Cover: 'cover', Contain: 'contain', Fill: 'fill', None: 'none' })}</>)}
-          {row('Opacity', 'opacity', <>{textInput('opacity', '0 to 1')}</>)}
-        </Group>
+          <Group title="Spacing">
+            {sides('margin')}
+            {sides('padding')}
+          </Group>
+
+          <Group title="Size">
+            <div className="grid grid-cols-3 gap-2">
+              {row('Width', 'width', <>{textInput('width', 'auto')}</>)}
+              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'none')}</>)}
+              {row('Height', 'height', <>{textInput('height', 'auto')}</>)}
+            </div>
+          </Group>
+
+          <Group title="Background & border">
+            {colorRow('Background', 'backgroundColor')}
+            {row('Corner radius', 'borderRadius', <>{presets('borderRadius', options?.radii)}
+              {textInput('borderRadius', 'e.g. 12px')}</>)}
+            {row('Border width', 'borderWidth', <>{textInput('borderWidth', 'e.g. 1px')}</>)}
+            {colorRow('Border colour', 'borderColor')}
+          </Group>
+        </>
       )}
 
       <div className="flex items-center justify-end gap-2 pt-1">

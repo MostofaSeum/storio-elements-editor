@@ -1,5 +1,5 @@
-import { a as CmsConfig, P as PageDef, b as StyleProps, F as FieldStyle, c as StyleSheetData, S as SectionRecord, d as SectionDetail, e as SectionMetadata, f as CollectionItemSummary } from './types-D_1RArqc.js';
-export { C as CmsStorageAdapter, g as CmsStyleOptions, h as CmsWidgets, i as CodeValue, j as CodeWidgetProps, k as CollectionLimit, I as IconComponent, l as ImagePreset, m as ImagePresetCategory, L as ListOptions, M as MediaItem, n as SaveRecordInput, o as SectionDef } from './types-D_1RArqc.js';
+import { a as CmsConfig, P as PageDef, b as StyleProps, F as FieldStyle, c as StyleSheetData, S as SectionRecord, d as SectionDetail, e as SectionMetadata, f as CollectionItemSummary } from './types-DQm4jn8V.js';
+export { C as CmsStorageAdapter, g as CmsStyleOptions, h as CmsWidgets, i as CodeValue, j as CodeWidgetProps, k as CollectionLimit, I as IconComponent, l as ImagePreset, m as ImagePresetCategory, L as ListOptions, M as MediaItem, n as SaveRecordInput, o as SectionDef } from './types-DQm4jn8V.js';
 import 'react';
 
 /** True for keys safe to use as page or section identifiers in storage and URLs. */
@@ -126,6 +126,8 @@ type CmsMessage = {
     page?: string;
     title?: string;
     fieldPath?: string;
+    /** What the clicked field shows, found from its element: an image, or text and the rest. */
+    fieldKind?: 'image' | 'text';
     /** Set when the field belongs to a collection record instead of a section. */
     collection?: string;
     item?: string;

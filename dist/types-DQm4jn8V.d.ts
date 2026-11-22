@@ -178,10 +178,19 @@ interface StyleProps {
     borderWidth?: string;
     borderColor?: string;
     objectFit?: string;
+    /** Which part of an image stays visible when it is cropped, e.g. "center" or "top". */
+    objectPosition?: string;
+    /** Width-to-height ratio, e.g. "16 / 9". */
+    aspectRatio?: string;
     opacity?: string;
 }
 /** One field's style. Desktop is the base; tablet and phone override it on narrower screens. */
 interface FieldStyle {
+    /**
+     * "image" when the field shows an image. Fit and focus then apply to the <img> itself, and
+     * size, corners and border to its box, which clips the image.
+     */
+    kind?: 'image';
     desktop?: StyleProps;
     tablet?: StyleProps;
     phone?: StyleProps;
