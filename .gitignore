@@ -8,3 +8,6 @@ __pycache__/
 build/
 *.sqlite3
 .venv/
+
+# Local Claude Code notes
+CLAUDE.local.md
