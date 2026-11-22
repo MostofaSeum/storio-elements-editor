@@ -67,8 +67,11 @@ interface FieldFrameProps {
 function fieldKindOf(wrapper: HTMLElement | null): 'image' | 'text' {
   if (!wrapper) return 'text';
   const media = wrapper.querySelector('img, picture, video, svg, canvas');
-  const text = (wrapper.textContent ?? '').trim();
-  return media && !text ? 'image' : 'text';
+  if (!media) return 'text';
+  // Visible text only: a styled field has its own <style> element inside, whose CSS is not text.
+  const copy = wrapper.cloneNode(true) as HTMLElement;
+  copy.querySelectorAll('style, script, noscript').forEach((node) => node.remove());
+  return (copy.textContent ?? '').trim() ? 'text' : 'image';
 }
 
 /** The hover outline and pencil shared by section fields and record fields. */

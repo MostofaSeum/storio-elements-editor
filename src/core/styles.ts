@@ -59,6 +59,16 @@ export function styleId(page: string, section: string, path: string): string {
   return `${page}:${section}:${path}`;
 }
 
+/**
+ * Properties that take a length. A plain number typed there ("50") means pixels, because CSS
+ * ignores a length without a unit. Line height, weight, opacity and aspect ratio stay unitless.
+ */
+const LENGTH_PROPERTIES = new Set<keyof StyleProps>([
+  'fontSize', 'letterSpacing', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'width', 'maxWidth', 'height',
+  'borderRadius', 'borderWidth',
+]);
+
 /** Keep only known properties with safe, non-empty string values. */
 export function sanitizeStyleProps(props: unknown): StyleProps {
   const out: StyleProps = {};
@@ -68,7 +78,8 @@ export function sanitizeStyleProps(props: unknown): StyleProps {
     if (typeof value !== 'string' && typeof value !== 'number') continue;
     const text = String(value).trim();
     if (!text || UNSAFE.test(text)) continue;
-    out[key as keyof StyleProps] = text;
+    const isBareNumber = /^-?\d*\.?\d+$/.test(text) && Number(text) !== 0;
+    out[key as keyof StyleProps] = isBareNumber && LENGTH_PROPERTIES.has(key as keyof StyleProps) ? `${text}px` : text;
   }
   return out;
 }

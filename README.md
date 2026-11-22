@@ -604,7 +604,7 @@ With Django and `ALLOWED_PAGES` set, add `"site"` to it.
 
 When a field is opened with its own pencil, the form has two tabs: **Content** and **Style**. The Style tab changes the look of that one element: colour, font size, weight, line height, letter spacing, alignment, font, margin, padding, width, max width, height, background, corner radius and border. When the clicked element is an image (`img`, `picture`, `video` or `svg`, with no text), the tab shows image options instead: width, max width, height, aspect ratio, fit, focus point, opacity, corner radius, border and margin. The preview changes as the editor works.
 
-Every value can be picked from a preset or typed in (any CSS value: `#7c3aed`, `2rem`, `24px`, `50%`, `var(--color-brand-600)`). The preview's **Desktop / Tablet / Mobile** buttons choose which screen size the values are for, and the tab shows which one you are editing. Tablet and phone use the wider value until they get their own.
+Every value can be picked from a preset or typed in (any CSS value: `#7c3aed`, `2rem`, `24px`, `50%`, `var(--color-brand-600)`). A plain number in a size, spacing, radius, border or font-size field means pixels (`50` is `50px`). The preview's **Desktop / Tablet / Mobile** buttons choose which screen size the values are for, and the tab shows which one you are editing. Tablet and phone use the wider value until they get their own.
 
 Offer your site's own colours and sizes as presets in `cms.config.ts`. Point them at your CSS variables, so a later change of a variable also changes every element that uses that preset:
 

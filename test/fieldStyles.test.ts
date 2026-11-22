@@ -49,6 +49,15 @@ describe('style model', () => {
     expect(fieldStyleToCss('home:hero:title', { desktop: { color: 'red;}' } })).toBe('');
   });
 
+  it('reads a plain number in a length field as pixels, and leaves unitless fields alone', () => {
+    expect(sanitizeStyleProps({ width: '10', maxWidth: '50', height: '50.5', marginTop: '-8', borderRadius: '0' })).toEqual({
+      width: '10px', maxWidth: '50px', height: '50.5px', marginTop: '-8px', borderRadius: '0',
+    });
+    expect(sanitizeStyleProps({ lineHeight: '1.4', fontWeight: '700', opacity: '0.5', aspectRatio: '16 / 9', width: '50%' })).toEqual({
+      lineHeight: '1.4', fontWeight: '700', opacity: '0.5', aspectRatio: '16 / 9', width: '50%',
+    });
+  });
+
   it('adds border-style with a border width, and inline-block for a styled wrapper', () => {
     expect(fieldStyleToCss('home:hero:title', { desktop: { borderWidth: '2px' } })).toContain('border-width:2px;border-style:solid;');
     expect(fieldStyleToCss('home:hero:title', { desktop: { width: '50%' } }, { wrapper: true })).toContain('display:inline-block;');

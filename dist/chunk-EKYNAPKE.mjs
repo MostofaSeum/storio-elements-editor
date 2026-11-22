@@ -162,6 +162,23 @@ var UNSAFE = /[;{}<>\\\r\n]/;
 function styleId(page, section, path) {
   return `${page}:${section}:${path}`;
 }
+var LENGTH_PROPERTIES = /* @__PURE__ */ new Set([
+  "fontSize",
+  "letterSpacing",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "width",
+  "maxWidth",
+  "height",
+  "borderRadius",
+  "borderWidth"
+]);
 function sanitizeStyleProps(props) {
   const out = {};
   if (!props || typeof props !== "object") return out;
@@ -170,7 +187,8 @@ function sanitizeStyleProps(props) {
     if (typeof value !== "string" && typeof value !== "number") continue;
     const text = String(value).trim();
     if (!text || UNSAFE.test(text)) continue;
-    out[key] = text;
+    const isBareNumber = /^-?\d*\.?\d+$/.test(text) && Number(text) !== 0;
+    out[key] = isBareNumber && LENGTH_PROPERTIES.has(key) ? `${text}px` : text;
   }
   return out;
 }

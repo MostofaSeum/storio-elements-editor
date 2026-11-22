@@ -18,7 +18,7 @@ import {
   resolveSectionPage,
   setFieldStyle,
   trustedOrigins
-} from "./chunk-OWX2RQ6L.mjs";
+} from "./chunk-EKYNAPKE.mjs";
 
 // src/admin/CmsStudio.tsx
 import { useState as useState8, useEffect as useEffect7 } from "react";
@@ -1919,9 +1919,9 @@ var StylePanel = ({
     isImage ? /* @__PURE__ */ jsxs6(Fragment3, { children: [
       /* @__PURE__ */ jsxs6(Group, { title: "Image size", children: [
         /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
-          row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
-          row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
-          row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
+          row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
+          row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
+          row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "e.g. 200") }))
         ] }),
         row("Aspect ratio", "aspectRatio", /* @__PURE__ */ jsxs6(Fragment3, { children: [
           presets("aspectRatio", { Square: "1 / 1", "4:3": "4 / 3", "3:2": "3 / 2", "16:9": "16 / 9", Portrait: "3 / 4" }),
@@ -1968,9 +1968,9 @@ var StylePanel = ({
         sides("padding")
       ] }),
       /* @__PURE__ */ jsx7(Group, { title: "Size", children: /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
-        row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
-        row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
-        row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
+        row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
+        row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
+        row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "e.g. 200") }))
       ] }) }),
       /* @__PURE__ */ jsxs6(Group, { title: "Background & border", children: [
         colorRow("Background", "backgroundColor"),

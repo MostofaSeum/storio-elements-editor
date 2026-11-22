@@ -17,7 +17,7 @@ import {
   styleId,
   themeToCss,
   trustedOrigins
-} from "./chunk-OWX2RQ6L.mjs";
+} from "./chunk-EKYNAPKE.mjs";
 
 // src/site/CmsProvider.tsx
 import { createContext, useContext, useEffect as useEffect3, useMemo, useState as useState2 } from "react";
@@ -466,8 +466,10 @@ function labelFromPath(path) {
 function fieldKindOf(wrapper) {
   if (!wrapper) return "text";
   const media = wrapper.querySelector("img, picture, video, svg, canvas");
-  const text = (wrapper.textContent ?? "").trim();
-  return media && !text ? "image" : "text";
+  if (!media) return "text";
+  const copy = wrapper.cloneNode(true);
+  copy.querySelectorAll("style, script, noscript").forEach((node) => node.remove());
+  return (copy.textContent ?? "").trim() ? "text" : "image";
 }
 var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
   const wrapperRef = useRef2(null);

@@ -253,6 +253,23 @@ var CSS_NAMES = {
 };
 var STYLE_PROPERTIES = Object.keys(CSS_NAMES);
 var UNSAFE = /[;{}<>\\\r\n]/;
+var LENGTH_PROPERTIES = /* @__PURE__ */ new Set([
+  "fontSize",
+  "letterSpacing",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "width",
+  "maxWidth",
+  "height",
+  "borderRadius",
+  "borderWidth"
+]);
 function sanitizeStyleProps(props) {
   const out = {};
   if (!props || typeof props !== "object") return out;
@@ -261,7 +278,8 @@ function sanitizeStyleProps(props) {
     if (typeof value !== "string" && typeof value !== "number") continue;
     const text = String(value).trim();
     if (!text || UNSAFE.test(text)) continue;
-    out[key] = text;
+    const isBareNumber = /^-?\d*\.?\d+$/.test(text) && Number(text) !== 0;
+    out[key] = isBareNumber && LENGTH_PROPERTIES.has(key) ? `${text}px` : text;
   }
   return out;
 }
@@ -2101,9 +2119,9 @@ var StylePanel = ({
     isImage ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Image size", children: [
         /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
-          row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
-          row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
-          row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
+          row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "e.g. 300 or 50%") })),
+          row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "e.g. 600") })),
+          row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "e.g. 200") }))
         ] }),
         row("Aspect ratio", "aspectRatio", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
           presets("aspectRatio", { Square: "1 / 1", "4:3": "4 / 3", "3:2": "3 / 2", "16:9": "16 / 9", Portrait: "3 / 4" }),
@@ -2150,9 +2168,9 @@ var StylePanel = ({
         sides("padding")
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Group, { title: "Size", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
-        row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
-        row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
-        row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
+        row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "e.g. 300 or 50%") })),
+        row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "e.g. 600") })),
+        row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "e.g. 200") }))
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Background & border", children: [
         colorRow("Background", "backgroundColor"),

@@ -230,9 +230,9 @@ export const StylePanel: React.FC<StylePanelProps> = ({
           {/* An image: size, crop, corners and frame. Text options do not apply. */}
           <Group title="Image size">
             <div className="grid grid-cols-3 gap-2">
-              {row('Width', 'width', <>{textInput('width', 'auto')}</>)}
-              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'none')}</>)}
-              {row('Height', 'height', <>{textInput('height', 'auto')}</>)}
+              {row('Width', 'width', <>{textInput('width', 'e.g. 300 or 50%')}</>)}
+              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'e.g. 600')}</>)}
+              {row('Height', 'height', <>{textInput('height', 'e.g. 200')}</>)}
             </div>
             {row('Aspect ratio', 'aspectRatio', <>{presets('aspectRatio', { Square: '1 / 1', '4:3': '4 / 3', '3:2': '3 / 2', '16:9': '16 / 9', Portrait: '3 / 4' })}
               {textInput('aspectRatio', 'e.g. 16 / 9')}</>)}
@@ -277,9 +277,9 @@ export const StylePanel: React.FC<StylePanelProps> = ({
 
           <Group title="Size">
             <div className="grid grid-cols-3 gap-2">
-              {row('Width', 'width', <>{textInput('width', 'auto')}</>)}
-              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'none')}</>)}
-              {row('Height', 'height', <>{textInput('height', 'auto')}</>)}
+              {row('Width', 'width', <>{textInput('width', 'e.g. 300 or 50%')}</>)}
+              {row('Max width', 'maxWidth', <>{textInput('maxWidth', 'e.g. 600')}</>)}
+              {row('Height', 'height', <>{textInput('height', 'e.g. 200')}</>)}
             </div>
           </Group>
 
