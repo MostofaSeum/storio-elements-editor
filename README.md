@@ -8,7 +8,10 @@
 - an optional **small pencil for each title, subtitle, image or icon**, which opens only that one field,
 - **database pages** such as blog posts or products (`[slug]` or `[id]` routes): a second menu lists the records, and their title, summary or image is saved straight to your own database,
 - a **form editor** for that section or field, built automatically from the content,
-- changes shown in the preview **as they type**, then saved, published, or reset to the default.
+- changes shown in the preview **as they type**, then saved, published, or reset to the default,
+- a **Style tab** for each field: colour, font size, spacing, width, background, corners, and image size, ratio and fit, per desktop, tablet and phone, with presets from your own CSS variables,
+- **SEO** for each page and for the whole site: title, description, keywords (as tags) and the **share image** (`og:image`, the picture shown when a link is shared on Facebook, LinkedIn, WhatsApp or X), chosen from the media library or uploaded,
+- **site-wide content**: header, footer, contact details and brand colours, editable from every page.
 
 Content is stored through a small adapter, so it works with a JSON file, Django, a database, or your own API. Editors never see JSON: they use forms.
 
@@ -32,7 +35,7 @@ Safety rules (most important):
 
 Steps:
 1. Check the project: Next.js App Router (app/ or src/app/), TypeScript, Tailwind CSS v4, Node 18.18+. Find the admin panel (folders like admin, dashboard, or a route group like (admin)), and find out whether there is a Django backend (a folder with manage.py). Then list every page file under app/ or src/app/ (page.tsx, page.jsx or page.js) that visitors open, leaving out the admin area, api/, login and other auth pages, the CMS screen, and error or not-found pages. Write the list down with each page's URL: every page on it must be made editable in step 5. If package.json already lists @brainicon/visual-cms (the old name of this library), follow the README section "Upgrading from @brainicon/visual-cms" instead of steps 2 and 3, then continue with step 4.
-2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.3.3   then check: npx storio-editor --version
+2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.3.4   then check: npx storio-editor --version
 3. Set it up with `npx storio-editor init --yes --no-example` (--no-example: this is a real project, so do not create the demo page at /cms-example):
    - with Django: add --django-dir <folder with manage.py> (and --api-url / --frontend-origin if the ports are not 8000 / 3000). This also sets up Django: package, settings, urls, CORS, migration.
    - if the admin panel lives under app/, add --admin-path "<admin folder>/cms" so the CMS screen sits behind the admin login.
@@ -47,10 +50,10 @@ Steps:
    - Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values); alt and placeholder values; and text inside <title>, <option> or <textarea>. Keep every item you skip for the final report, with the reason.
 5b. Make the site-wide parts editable too: the navbar/header, the footer, contact details and social links that repeat on several pages, the default SEO (site name, title template, description, share image, favicon) and the brand colours. Follow the README section "Site-wide content": add one page with global: true (key "site") to cms.config.ts with the sections header, footer, contact, seo and theme, put the current values in content/site.json, read them with useSiteContent() in the shared components, wrap the navbar in <CmsSection sectionKey="header" title="Header" page="site"> and the footer the same way, give every link, label and logo its own <CmsField>, and use getSiteMetadata in the root layout. Keep the output identical.
    - Optional: where scan turned hand-written repeated cards into separate fields, you may turn them into an array in the JSON plus a .map() in the code, so editors can add and remove items. Keep the output identical.
-5c. Make every page's SEO editable. Follow the README section "Page SEO": for each page from step 1 except [slug]/[id] pages (they keep their metadata built from the record, because one seo section would give every record the same title), add a section { key: 'seo', label: 'SEO' } to that page in cms.config.ts, put the page's current title, description, keywords (as a list) and share image in content/<page>.json under "seo", and replace its static metadata export with generateMetadata calling getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> }). generateMetadata only works in a server page file, so keep page files that export it as Server Components (move JSX into a client View component as in step 5). The <title> and meta tags must stay exactly the same as before.
+5c. Make every page's SEO editable. Follow the README section "Page SEO": for each page from step 1 except [slug]/[id] pages (they keep their metadata built from the record, because one seo section would give every record the same title), add a section { key: 'seo', label: 'SEO' } to that page in cms.config.ts, put the page's current title, description, keywords (as a list) and share image (ogImage) in content/<page>.json under "seo" (when the share image is hard-coded in the code, put its current path in ogImage and read it from there, keeping the old path as the fallback, so editors can replace it; make sure the root layout sets metadataBase), and replace its static metadata export with generateMetadata calling getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> }). generateMetadata only works in a server page file, so keep page files that export it as Server Components (move JSX into a client View component as in step 5). The <title> and meta tags must stay exactly the same as before.
 5d. Make the design editable with the Style tab. Follow the README section "Field styles": add styles to defineCms in cms.config.ts with presets taken from the site's own design tokens: colors (the brand, accent, text, muted, background and white colours), fontSizes, spacing and radii. Point each preset at the site's existing CSS variable (var(--color-brand-600)) or Tailwind theme value; never invent colours. Set breakpoints to the site's tablet and phone breakpoints if they differ from 1024 and 768. If the project uses its own storage adapter that only accepts known sections, let it save the reserved section key "_styles" for every page. When the same section key is used on several pages, add page="<page key>" to those <CmsSection>s. Nothing must look different until an editor changes a style.
 6. Run npx storio-editor doctor and fix every FAIL.
-7. Start the dev server and open the CMS screen. With Django the screen shows a sign-in form: sign in with a Django staff account (python manage.py createsuperuser makes one). Hover a title, an image, an icon and a list item in turn, and confirm each shows its own small pencil and opens a form with only that field. Pick an icon the page did not use before and confirm the preview shows exactly that icon. For a page with records, pick a record in the second menu and confirm its fields open as a database record. Change the title, Save & Publish, and check the public page shows it. Then reset it. Also hover an empty part of the section and confirm the larger section pencil opens the full form. Open a title's Style tab, pick a colour preset and a font size, confirm the preview changes, Save & Publish, check the public page, then Reset styles. Open an image's Style tab and confirm it shows image options (size, ratio, fit, corners). Open the page's SEO section, change the title, Save & Publish, confirm the page's <title> in the HTML (view-source) changed, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils.
+7. Start the dev server and open the CMS screen. With Django the screen shows a sign-in form: sign in with a Django staff account (python manage.py createsuperuser makes one). Hover a title, an image, an icon and a list item in turn, and confirm each shows its own small pencil and opens a form with only that field. Pick an icon the page did not use before and confirm the preview shows exactly that icon. For a page with records, pick a record in the second menu and confirm its fields open as a database record. Change the title, Save & Publish, and check the public page shows it. Then reset it. Also hover an empty part of the section and confirm the larger section pencil opens the full form. Open a title's Style tab, pick a colour preset and a font size, confirm the preview changes, Save & Publish, check the public page, then Reset styles. Open an image's Style tab and confirm it shows image options (size, ratio, fit, corners). Open the page's SEO section, change the title, Save & Publish, confirm the page's <title> in the HTML (view-source) changed, then reset it. Pick another share image in the same section, save, confirm <meta property="og:image"> in the HTML is a full URL (https://...) to that image, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils.
 8. Production: make sure the API URL comes from NEXT_PUBLIC_CMS_API_URL (init generates this), and tell me to run  npx storio-editor doctor --production --frontend-origin <site URL> --api-url <API URL>  before deploying (README section 5, "Deploying to production").
 9. Report to me: what was installed, every file created or edited, the CMS URL, a table of every page from the step 1 list with its URL, whether it is editable and whether its SEO is editable (and why not), the style presets added and which CSS variables they use, every visible item left without its own pencil and why, and anything I still have to do (for example the real login check for saving, a staff user, or production settings).
 ```
@@ -78,13 +81,13 @@ Steps:
 In your Next.js project:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.3
+npm install github:MostofaSeum/storio-elements-editor#v1.3.4
 ```
 
-`#v1.3.3` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
+`#v1.3.4` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
 
 ```bash
-npx storio-editor --version     # prints 1.3.3
+npx storio-editor --version     # prints 1.3.4
 ```
 
 ### Step 2. Run the setup command
@@ -304,7 +307,7 @@ Copy the prompt from [the top of this README](#let-your-ai-agent-do-it) into you
 **Step 3. Install the library.**
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.3
+npm install github:MostofaSeum/storio-elements-editor#v1.3.4
 npx storio-editor --version
 ```
 
@@ -339,7 +342,7 @@ Pass when the command exits with code 0 and lists created and modified files. **
 5. Dynamic routes (`[slug]`, `[id]`) show one database record at a time. Do [Pages with [slug] or [id]](#pages-with-slug-or-id): add a collection to the CMS API route using the project's own data functions (Django: `STORIO_EDITOR["COLLECTIONS"]`), scan the template with `--route <route with brackets> --collection <key> --page <key>` (plus `--parent <list page key>` when there is a list page), and wrap each visible record field, on the record page and on the list page, in `<CmsField collection item path>`. If the data cannot be saved back (for example it comes from a third-party API), make only the fixed text editable and note why for Step 8.
 6. Optional: blocks written out by hand several times (for example four copied cards) became separate fields. You may turn them into an array in the JSON plus a `.map()` in the code, so editors can add and remove items. Keep the output identical.
 7. Site-wide parts, once for the whole site: do [Site-wide content](#site-wide-content-header-footer-seo-theme). Add a page with `global: true` (key `site`) with the sections `header`, `footer`, `contact`, `seo` and `theme`, move the current values of the navbar, the footer, repeated contact details and social links into `content/site.json`, read them with `useSiteContent()`, wrap the navbar and footer in `<CmsSection ... page="site">` with a `<CmsField>` for every link, label and logo, and replace the root layout's static `metadata` with `generateMetadata` calling `getSiteMetadata` (keep the old values as `fallback`). Only add a `theme` section when the site's colours are already CSS variables, or can become variables without changing how it looks.
-8. Page SEO, for every page on the list except `[slug]`/`[id]` pages (those keep metadata built from the record): do [Page SEO](#page-seo-title-description-share-image). Add `{ key: 'seo', label: 'SEO' }` to the page in `cms.config.ts`, put the current title, description, keywords (as a list) and share image in `content/<page>.json` under `seo`, and replace the static `metadata` export with `generateMetadata` calling `getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> })`. The page file must stay a Server Component. The rendered `<title>` and meta tags must be the same as before.
+8. Page SEO, for every page on the list except `[slug]`/`[id]` pages (those keep metadata built from the record): do [Page SEO](#page-seo-title-description-share-image). Add `{ key: 'seo', label: 'SEO' }` to the page in `cms.config.ts`, put the current title, description, keywords (as a list) and share image (`ogImage`) in `content/<page>.json` under `seo` (when the share image is hard-coded, move its current path into `ogImage` and keep the old path as the fallback; make sure the root layout sets `metadataBase`), and replace the static `metadata` export with `generateMetadata` calling `getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> })`. The page file must stay a Server Component. The rendered `<title>` and meta tags must be the same as before.
 9. Style presets, once for the whole site: do [Field styles](#field-styles-colour-size-spacing). Add `styles` to `defineCms` with `colors`, `fontSizes`, `spacing` and `radii` taken from the site's own design tokens (its CSS variables or Tailwind theme, for example `var(--color-brand-600)`); do not invent values. Set `breakpoints` when the site's tablet or phone breakpoint differs from 1024 / 768. If the project has its own storage adapter that accepts only known sections, let it save `_styles` for every page. Where one section key is used on several pages, add `page="<page key>"` to those `<CmsSection>`s. Nothing changes for visitors until an editor saves a style.
 
 **Step 7. Verify.** Pass only when all of these hold (the dev server uses port 3000 unless the project says otherwise):
@@ -352,7 +355,7 @@ curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000<ADMIN_URL>"   # 20
 curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/"             # 200
 ```
 
-If you have a browser tool: open the CMS URL (with Django, sign in with a staff account on the form it shows), confirm the preview loads, hover a text, an image, an icon and a list item in turn, confirm each small pencil opens a form with only that field, change the text, **Save & Publish**, check the public page, then reset it. Open a title's **Style** tab, pick a colour preset and a font size, confirm the preview changes, **Save & Publish**, check the public page, then **Reset styles**; open an image's Style tab and confirm it offers image options (size, ratio, fit, corners). Open the page's SEO section, change the title, **Save & Publish**, and confirm with `curl -s http://localhost:3000/ | grep -o "<title>[^<]*"` that the HTML title changed, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils. Without a browser tool, `curl` each converted page's URL and expect 200. Stop the dev server you started.
+If you have a browser tool: open the CMS URL (with Django, sign in with a staff account on the form it shows), confirm the preview loads, hover a text, an image, an icon and a list item in turn, confirm each small pencil opens a form with only that field, change the text, **Save & Publish**, check the public page, then reset it. Open a title's **Style** tab, pick a colour preset and a font size, confirm the preview changes, **Save & Publish**, check the public page, then **Reset styles**; open an image's Style tab and confirm it offers image options (size, ratio, fit, corners). Open the page's SEO section, change the title, **Save & Publish**, and confirm with `curl -s http://localhost:3000/ | grep -o "<title>[^<]*"` that the HTML title changed, then reset it. Pick another share image there, save, and confirm `<meta property="og:image">` is a full URL (`https://...`) to that image, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils. Without a browser tool, `curl` each converted page's URL and expect 200. Stop the dev server you started.
 
 **Step 8. Report to the developer.** Say what was created and edited, the CMS URL, where the menu link was added, a table of every page from the Step 6 list with its URL, whether it is editable and whether its SEO is editable (and why not), the style presets and the CSS variables they point to, every visible item left without its own pencil and why, and what is still theirs to do: the real login check for the file backend if you could not add it, a staff user for Django, and a database-backed storage before deploying to a serverless host ([Before you go live](#5-before-you-go-live)).
 
@@ -633,7 +636,9 @@ export async function generateMetadata() {
 
 Use it on pages with a fixed URL. A `[slug]` or `[id]` page shows many records, so keep building its metadata from the record in your own `generateMetadata`.
 
-Fields: `title`, `description`, `keywords`, `canonical`, `ogTitle`, `ogDescription`, `ogImage`, `twitterCard`, `robots` (`"noindex"`, `"nofollow"` or both). Empty fields fall back to `fallback`, then to the site SEO of the global page ([Site-wide content](#site-wide-content-header-footer-seo-theme)). `keywords` is edited as tags (Enter or comma adds one). Google ignores the keywords meta tag, so treat it as optional; the title and description are what show in search results. A page with the `seo` section must not be a client component, because `generateMetadata` runs on the server.
+Fields: `title`, `description`, `keywords`, `canonical`, `ogTitle`, `ogDescription`, `ogImage`, `twitterCard`, `robots` (`"noindex"`, `"nofollow"` or both). Empty fields fall back to `fallback`, then to the site SEO of the global page ([Site-wide content](#site-wide-content-header-footer-seo-theme)). `keywords` is edited as tags (Enter or comma adds one).
+
+**Share image.** `ogImage` gets the image picker, so editors can pick a new share image from the media library, upload one or paste a URL. It becomes `og:image` and `twitter:image`. A page without its own `ogImage` uses the one in the site SEO. Set `metadataBase` in the root layout (`metadataBase: new URL('https://example.com')`) so a path like `/og.png` or an uploaded `/media/...` becomes a full URL, which Facebook and LinkedIn require. Tell editors to use 1200×630 images, and that social networks cache previews: Facebook's Sharing Debugger refreshes an old one. Google ignores the keywords meta tag, so treat it as optional; the title and description are what show in search results. A page with the `seo` section must not be a client component, because `generateMetadata` runs on the server.
 
 ### Field styles (colour, size, spacing)
 
@@ -831,7 +836,7 @@ A copy of each edited file is saved next to it as `*.storio-editor.bak`. Running
 You can also run the Django part on its own, without the Next.js part:
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.3#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"
 python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000 [--dry-run] [--no-cors] [--no-migrate]
 ```
 
@@ -899,7 +904,7 @@ Add `<CmsLogoutButton auth={cmsLogin} redirectTo="/admin/login" />` to your admi
 
 #### By hand
 
-Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.3#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
+Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
 
 ### Your own backend
 
@@ -950,8 +955,8 @@ interface CmsStorageAdapter {
 | the sign-in form says "This account is not allowed to edit the site" | the account is not staff (or your `AUTHORIZE` function says no) | set `is_staff` on the user in the Django admin |
 | the sign-in form says "Too many failed attempts" | 5 wrong passwords for that username from this address | wait 5 minutes (`LOGIN_LOCKOUT_SECONDS`) |
 | the sign-in form says "Token login is not available on this server" | `django-storio-elements-editor` is older than 0.4 or `TOKEN_LOGIN` is `False` | upgrade the package ([section 9](#9-updating)); `npx storio-editor doctor` says which |
-| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.3.3` in the project root, then retry |
-| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.3.3` |
+| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.3.4` in the project root, then retry |
+| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.3.4` |
 | the CMS screen has no styling | the Tailwind `@source` line is missing or points to the wrong place, or Tailwind is v3 | open the CSS file your root layout imports; it must contain `@source "…/node_modules/@brainicon/storio-elements-editor/dist";` below `@import "tailwindcss";` |
 | the preview shows "Loading…" forever, or is blank | the page's `route` in `cms.config.ts` is wrong, the page throws an error, a redirect catches the preview, or the site blocks being framed | open the route in a normal tab; check `middleware.ts` ([below](#redirects-and-the-preview-iframe)); remove `X-Frame-Options: DENY` |
 | hovering shows no pencil | the block is not wrapped in `<CmsSection>`, `CmsProviders` is missing from the root layout, or Edit Mode is off | wrap the block; check `app/layout.tsx`; turn Edit Mode on in the toolbar |
@@ -1183,11 +1188,11 @@ if (!isCmsPreviewRequest(request, { studioPath: '/admin/cms' })) {
 Install a newer release by its tag, then restart the dev server:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.3     # use the new tag
+npm install github:MostofaSeum/storio-elements-editor#v1.3.4     # use the new tag
 rm -rf .next                                               # PowerShell: Remove-Item -Recurse -Force .next
 ```
 
-With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.3#subdirectory=django-storio-elements-editor"`.
+With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"`.
 
 ### Upgrading from `@brainicon/visual-cms`
 
