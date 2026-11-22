@@ -47,10 +47,12 @@ Steps:
    - Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values); alt and placeholder values; and text inside <title>, <option> or <textarea>. Keep every item you skip for the final report, with the reason.
 5b. Make the site-wide parts editable too: the navbar/header, the footer, contact details and social links that repeat on several pages, the default SEO (site name, title template, description, share image, favicon) and the brand colours. Follow the README section "Site-wide content": add one page with global: true (key "site") to cms.config.ts with the sections header, footer, contact, seo and theme, put the current values in content/site.json, read them with useSiteContent() in the shared components, wrap the navbar in <CmsSection sectionKey="header" title="Header" page="site"> and the footer the same way, give every link, label and logo its own <CmsField>, and use getSiteMetadata in the root layout. Keep the output identical.
    - Optional: where scan turned hand-written repeated cards into separate fields, you may turn them into an array in the JSON plus a .map() in the code, so editors can add and remove items. Keep the output identical.
+5c. Make every page's SEO editable. Follow the README section "Page SEO": for each page from step 1 except [slug]/[id] pages (they keep their metadata built from the record, because one seo section would give every record the same title), add a section { key: 'seo', label: 'SEO' } to that page in cms.config.ts, put the page's current title, description, keywords (as a list) and share image in content/<page>.json under "seo", and replace its static metadata export with generateMetadata calling getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> }). generateMetadata only works in a server page file, so keep page files that export it as Server Components (move JSX into a client View component as in step 5). The <title> and meta tags must stay exactly the same as before.
+5d. Make the design editable with the Style tab. Follow the README section "Field styles": add styles to defineCms in cms.config.ts with presets taken from the site's own design tokens: colors (the brand, accent, text, muted, background and white colours), fontSizes, spacing and radii. Point each preset at the site's existing CSS variable (var(--color-brand-600)) or Tailwind theme value; never invent colours. Set breakpoints to the site's tablet and phone breakpoints if they differ from 1024 and 768. If the project uses its own storage adapter that only accepts known sections, let it save the reserved section key "_styles" for every page. When the same section key is used on several pages, add page="<page key>" to those <CmsSection>s. Nothing must look different until an editor changes a style.
 6. Run npx storio-editor doctor and fix every FAIL.
-7. Start the dev server and open the CMS screen. With Django the screen shows a sign-in form: sign in with a Django staff account (python manage.py createsuperuser makes one). Hover a title, an image, an icon and a list item in turn, and confirm each shows its own small pencil and opens a form with only that field. Pick an icon the page did not use before and confirm the preview shows exactly that icon. For a page with records, pick a record in the second menu and confirm its fields open as a database record. Change the title, Save & Publish, and check the public page shows it. Then reset it. Also hover an empty part of the section and confirm the larger section pencil opens the full form. Then pick every other page in the CMS page list and confirm its preview loads with pencils.
+7. Start the dev server and open the CMS screen. With Django the screen shows a sign-in form: sign in with a Django staff account (python manage.py createsuperuser makes one). Hover a title, an image, an icon and a list item in turn, and confirm each shows its own small pencil and opens a form with only that field. Pick an icon the page did not use before and confirm the preview shows exactly that icon. For a page with records, pick a record in the second menu and confirm its fields open as a database record. Change the title, Save & Publish, and check the public page shows it. Then reset it. Also hover an empty part of the section and confirm the larger section pencil opens the full form. Open a title's Style tab, pick a colour preset and a font size, confirm the preview changes, Save & Publish, check the public page, then Reset styles. Open an image's Style tab and confirm it shows image options (size, ratio, fit, corners). Open the page's SEO section, change the title, Save & Publish, confirm the page's <title> in the HTML (view-source) changed, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils.
 8. Production: make sure the API URL comes from NEXT_PUBLIC_CMS_API_URL (init generates this), and tell me to run  npx storio-editor doctor --production --frontend-origin <site URL> --api-url <API URL>  before deploying (README section 5, "Deploying to production").
-9. Report to me: what was installed, every file created or edited, the CMS URL, a table of every page from the step 1 list with its URL and whether it is editable (and why not), every visible item left without its own pencil and why, and anything I still have to do (for example the real login check for saving, a staff user, or production settings).
+9. Report to me: what was installed, every file created or edited, the CMS URL, a table of every page from the step 1 list with its URL, whether it is editable and whether its SEO is editable (and why not), the style presets added and which CSS variables they use, every visible item left without its own pencil and why, and anything I still have to do (for example the real login check for saving, a staff user, or production settings).
 ```
 
 ## Contents
@@ -337,6 +339,8 @@ Pass when the command exits with code 0 and lists created and modified files. **
 5. Dynamic routes (`[slug]`, `[id]`) show one database record at a time. Do [Pages with [slug] or [id]](#pages-with-slug-or-id): add a collection to the CMS API route using the project's own data functions (Django: `STORIO_EDITOR["COLLECTIONS"]`), scan the template with `--route <route with brackets> --collection <key> --page <key>` (plus `--parent <list page key>` when there is a list page), and wrap each visible record field, on the record page and on the list page, in `<CmsField collection item path>`. If the data cannot be saved back (for example it comes from a third-party API), make only the fixed text editable and note why for Step 8.
 6. Optional: blocks written out by hand several times (for example four copied cards) became separate fields. You may turn them into an array in the JSON plus a `.map()` in the code, so editors can add and remove items. Keep the output identical.
 7. Site-wide parts, once for the whole site: do [Site-wide content](#site-wide-content-header-footer-seo-theme). Add a page with `global: true` (key `site`) with the sections `header`, `footer`, `contact`, `seo` and `theme`, move the current values of the navbar, the footer, repeated contact details and social links into `content/site.json`, read them with `useSiteContent()`, wrap the navbar and footer in `<CmsSection ... page="site">` with a `<CmsField>` for every link, label and logo, and replace the root layout's static `metadata` with `generateMetadata` calling `getSiteMetadata` (keep the old values as `fallback`). Only add a `theme` section when the site's colours are already CSS variables, or can become variables without changing how it looks.
+8. Page SEO, for every page on the list except `[slug]`/`[id]` pages (those keep metadata built from the record): do [Page SEO](#page-seo-title-description-share-image). Add `{ key: 'seo', label: 'SEO' }` to the page in `cms.config.ts`, put the current title, description, keywords (as a list) and share image in `content/<page>.json` under `seo`, and replace the static `metadata` export with `generateMetadata` calling `getPageMetadata(cms, '<page key>', { storage, fallback: <the old metadata> })`. The page file must stay a Server Component. The rendered `<title>` and meta tags must be the same as before.
+9. Style presets, once for the whole site: do [Field styles](#field-styles-colour-size-spacing). Add `styles` to `defineCms` with `colors`, `fontSizes`, `spacing` and `radii` taken from the site's own design tokens (its CSS variables or Tailwind theme, for example `var(--color-brand-600)`); do not invent values. Set `breakpoints` when the site's tablet or phone breakpoint differs from 1024 / 768. If the project has its own storage adapter that accepts only known sections, let it save `_styles` for every page. Where one section key is used on several pages, add `page="<page key>"` to those `<CmsSection>`s. Nothing changes for visitors until an editor saves a style.
 
 **Step 7. Verify.** Pass only when all of these hold (the dev server uses port 3000 unless the project says otherwise):
 
@@ -348,9 +352,9 @@ curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000<ADMIN_URL>"   # 20
 curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/"             # 200
 ```
 
-If you have a browser tool: open the CMS URL (with Django, sign in with a staff account on the form it shows), confirm the preview loads, hover a text, an image, an icon and a list item in turn, confirm each small pencil opens a form with only that field, change the text, **Save & Publish**, check the public page, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils. Without a browser tool, `curl` each converted page's URL and expect 200. Stop the dev server you started.
+If you have a browser tool: open the CMS URL (with Django, sign in with a staff account on the form it shows), confirm the preview loads, hover a text, an image, an icon and a list item in turn, confirm each small pencil opens a form with only that field, change the text, **Save & Publish**, check the public page, then reset it. Open a title's **Style** tab, pick a colour preset and a font size, confirm the preview changes, **Save & Publish**, check the public page, then **Reset styles**; open an image's Style tab and confirm it offers image options (size, ratio, fit, corners). Open the page's SEO section, change the title, **Save & Publish**, and confirm with `curl -s http://localhost:3000/ | grep -o "<title>[^<]*"` that the HTML title changed, then reset it. Then pick every other page in the CMS page list and confirm its preview loads with pencils. Without a browser tool, `curl` each converted page's URL and expect 200. Stop the dev server you started.
 
-**Step 8. Report to the developer.** Say what was created and edited, the CMS URL, where the menu link was added, a table of every page from the Step 6 list with its URL and whether it is editable (and why not), every visible item left without its own pencil and why, and what is still theirs to do: the real login check for the file backend if you could not add it, a staff user for Django, and a database-backed storage before deploying to a serverless host ([Before you go live](#5-before-you-go-live)).
+**Step 8. Report to the developer.** Say what was created and edited, the CMS URL, where the menu link was added, a table of every page from the Step 6 list with its URL, whether it is editable and whether its SEO is editable (and why not), the style presets and the CSS variables they point to, every visible item left without its own pencil and why, and what is still theirs to do: the real login check for the file backend if you could not add it, a staff user for Django, and a database-backed storage before deploying to a serverless host ([Before you go live](#5-before-you-go-live)).
 
 **Common mistakes to avoid**
 
@@ -359,6 +363,8 @@ If you have a browser tool: open the CMS URL (with Django, sign in with a staff 
 - Forgetting that `--admin-path` must be quoted when it contains parentheses.
 - Removing `authorize` or making it always return `true`.
 - Adding `'use client'` to a page that is `async`, exports `metadata`, or reads a database.
+- Putting `generateMetadata` in a client component, or one page-wide `seo` section on a `[slug]` page.
+- Style presets with made-up colours instead of the site's own variables.
 - Wrapping a section in `<CmsSection sectionKey="x">` without adding `x` to that page's `sections` in `cms.config.ts` (`scan` and `add-page` do this for you).
 - With `--auth session` only: logging in to Django at `127.0.0.1` while the site calls `localhost` (the login cookie is not shared, so saving fails with 401). The default token login has no such problem.
 
@@ -452,7 +458,7 @@ Tips:
 - Each `sectionKey` must match a `key` in that page's `sections`.
 - Give list items an `id`. Name image fields like `image`, `logo`, `avatar` or `src` to get the image picker, and icon fields like `icon` to get the icon picker. List the icons your site can draw in `icons` of `defineCms`, so the picker never offers one the page cannot show ([Icons](#icons)).
 - For sticky headers or banners, use `<CmsSection buttonPlacement="fixed">` so the pencil is not hidden.
-- To let editors control the page's SEO, add a `seo` section (`title`, `description`, `keywords`, `canonical`, `ogTitle`, `ogDescription`, `ogImage`, `twitterCard`, `robots`) and use `getPageMetadata(cms, 'home', { storage })` in `generateMetadata`.
+- To let editors control the page's SEO, add a `seo` section and use `getPageMetadata` in `generateMetadata` ([Page SEO](#page-seo-title-description-share-image)).
 - With the Django backend, use `import { storage } from '@/lib/cms-storage'` the same way; `init` already generates it for Django.
 
 ### Edit single fields
@@ -599,6 +605,35 @@ h1, h2 { font-family: var(--heading-font), sans-serif; }
 With Tailwind v4 you can point theme colours at them: `@theme inline { --color-brand: var(--primary-color); }`. A value containing `;`, `{`, `}`, `<`, `>` or `\` is ignored, so an editor cannot break the page's CSS.
 
 With Django and `ALLOWED_PAGES` set, add `"site"` to it.
+
+### Page SEO (title, description, share image)
+
+Each page can have its own editable `seo` section. Editors change it in the studio like any other section, and the page's `<title>`, meta description, canonical URL, Open Graph and Twitter tags follow on the next request, rendered on the server, so search engines see them in the HTML.
+
+```ts
+// cms.config.ts: add the section to the page
+{ key: 'home', route: '/', sections: [/* ... */ { key: 'seo', label: 'SEO' }] }
+```
+
+```json
+// content/home.json: start with the page's current values
+"seo": { "title": "Acme | We build things", "description": "...", "keywords": ["web design", "apps"], "ogImage": "/og.png" }
+```
+
+```tsx
+// app/page.tsx: replace the static `metadata` export
+import { getPageMetadata } from '@brainicon/storio-elements-editor/next';
+import { cms } from '@/cms.config';
+import { storage } from '@/lib/cms-storage';
+
+export async function generateMetadata() {
+  return getPageMetadata(cms, 'home', { storage, fallback: { title: 'Acme | We build things' } });
+}
+```
+
+Use it on pages with a fixed URL. A `[slug]` or `[id]` page shows many records, so keep building its metadata from the record in your own `generateMetadata`.
+
+Fields: `title`, `description`, `keywords`, `canonical`, `ogTitle`, `ogDescription`, `ogImage`, `twitterCard`, `robots` (`"noindex"`, `"nofollow"` or both). Empty fields fall back to `fallback`, then to the site SEO of the global page ([Site-wide content](#site-wide-content-header-footer-seo-theme)). `keywords` is edited as tags (Enter or comma adds one). Google ignores the keywords meta tag, so treat it as optional; the title and description are what show in search results. A page with the `seo` section must not be a client component, because `generateMetadata` runs on the server.
 
 ### Field styles (colour, size, spacing)
 
