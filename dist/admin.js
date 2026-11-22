@@ -1949,6 +1949,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
   const sectionPageDef = globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
   const sectionPage = sectionPageDef?.key ?? activePage;
+  const listedGlobalSections = globalPage?.listOnEveryPage === false ? globalSections.filter((s) => s.key === activeSectionKey) : globalSections;
   const iframeRef = (0, import_react7.useRef)(null);
   const viewportContainerRef = (0, import_react7.useRef)(null);
   const [containerSize, setContainerSize] = (0, import_react7.useState)({
@@ -2018,6 +2019,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     setRecordTarget(null);
     setRecordDetail(null);
     setActivePage(pageKey);
+    const nextSections = findPage(config, pageKey)?.sections ?? [];
+    if (nextSections[0]) setActiveSectionKey(nextSections[0].key);
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
     if (onPageChange) onPageChange(pageKey);
@@ -2415,7 +2418,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             }
           ),
           isSectionListOpen && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, globalSections].map(
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
               (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_react7.default.Fragment, { children: [
                 index === 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Globe, { className: "w-3 h-3" }),

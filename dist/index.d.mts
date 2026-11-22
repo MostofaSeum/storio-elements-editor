@@ -1,5 +1,5 @@
-import { a as CmsConfig, P as PageDef, S as SectionRecord, b as SectionDetail, c as SectionMetadata, d as CollectionItemSummary } from './types-SBxa2Bl2.mjs';
-export { C as CmsStorageAdapter, e as CmsWidgets, f as CodeValue, g as CodeWidgetProps, h as CollectionLimit, I as IconComponent, i as ImagePreset, j as ImagePresetCategory, L as ListOptions, M as MediaItem, k as SaveRecordInput, l as SectionDef } from './types-SBxa2Bl2.mjs';
+import { a as CmsConfig, P as PageDef, S as SectionRecord, b as SectionDetail, c as SectionMetadata, d as CollectionItemSummary } from './types-C5pvdvMZ.mjs';
+export { C as CmsStorageAdapter, e as CmsWidgets, f as CodeValue, g as CodeWidgetProps, h as CollectionLimit, I as IconComponent, i as ImagePreset, j as ImagePresetCategory, L as ListOptions, M as MediaItem, k as SaveRecordInput, l as SectionDef } from './types-C5pvdvMZ.mjs';
 import 'react';
 
 /** True for keys safe to use as page or section identifiers in storage and URLs. */

@@ -1826,6 +1826,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
   const sectionPageDef = globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
   const sectionPage = sectionPageDef?.key ?? activePage;
+  const listedGlobalSections = globalPage?.listOnEveryPage === false ? globalSections.filter((s) => s.key === activeSectionKey) : globalSections;
   const iframeRef = useRef3(null);
   const viewportContainerRef = useRef3(null);
   const [containerSize, setContainerSize] = useState7({
@@ -1895,6 +1896,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     setRecordTarget(null);
     setRecordDetail(null);
     setActivePage(pageKey);
+    const nextSections = findPage(config, pageKey)?.sections ?? [];
+    if (nextSections[0]) setActiveSectionKey(nextSections[0].key);
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
     if (onPageChange) onPageChange(pageKey);
@@ -2292,7 +2295,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             }
           ),
           isSectionListOpen && /* @__PURE__ */ jsxs6(Fragment3, { children: [
-            /* @__PURE__ */ jsx7("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, globalSections].map(
+            /* @__PURE__ */ jsx7("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
               (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs6(React7.Fragment, { children: [
                 index === 1 && /* @__PURE__ */ jsxs6("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
                   /* @__PURE__ */ jsx7(Globe, { className: "w-3 h-3" }),

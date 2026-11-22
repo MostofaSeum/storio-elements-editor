@@ -24,6 +24,9 @@ export function defineCms(config: CmsConfig): CmsConfig {
     if (!page.route.startsWith('/')) {
       throw new Error(`[storio-editor] Page "${page.key}" route must start with "/".`);
     }
+    if (page.listOnEveryPage !== undefined && !page.global) {
+      throw new Error(`[storio-editor] Page "${page.key}" has listOnEveryPage, which only applies to the page with global: true.`);
+    }
     if (page.collection !== undefined && !isValidKey(page.collection)) {
       throw new Error(`[storio-editor] Invalid collection "${page.collection}" on page "${page.key}".`);
     }

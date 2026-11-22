@@ -122,6 +122,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   const sectionPageDef: PageDef | undefined =
     globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
   const sectionPage = sectionPageDef?.key ?? activePage;
+  // With listOnEveryPage: false the site-wide sections stay out of other pages' lists; one opened
+  // from a click in the preview is shown while it is open.
+  const listedGlobalSections =
+    globalPage?.listOnEveryPage === false ? globalSections.filter((s) => s.key === activeSectionKey) : globalSections;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const viewportContainerRef = useRef<HTMLDivElement>(null);
@@ -206,6 +210,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
     setRecordTarget(null);
     setRecordDetail(null);
     setActivePage(pageKey);
+    // Start on the new page's own first section, so a site-wide section opened on the previous
+    // page does not stay selected.
+    const nextSections = findPage(config, pageKey)?.sections ?? [];
+    if (nextSections[0]) setActiveSectionKey(nextSections[0].key);
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
     if (onPageChange) onPageChange(pageKey);
@@ -667,7 +675,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
             <>
             {/* Section switcher pills */}
             <div id="cms-section-list" className="flex flex-wrap gap-1.5">
-              {[pageSections, globalSections].map((list, index) =>
+              {[pageSections, listedGlobalSections].map((list, index) =>
                 list.length === 0 ? null : (
                   <React.Fragment key={index}>
                     {index === 1 && (

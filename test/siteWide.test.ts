@@ -48,6 +48,13 @@ describe('global page validation', () => {
     expect(() => defineCms({ adapter: memoryAdapter(), pages: [{ ...sitePage, collection: 'posts' }] })).toThrow(/cannot have a collection/);
   });
 
+  it('allows listOnEveryPage only on the global page', () => {
+    expect(() => defineCms({ adapter: memoryAdapter(), pages: [{ ...sitePage, listOnEveryPage: false }] })).not.toThrow();
+    expect(() => defineCms({ adapter: memoryAdapter(), pages: [{ ...pages[0], listOnEveryPage: false }] })).toThrow(
+      /only applies to the page with global: true/
+    );
+  });
+
   it('rejects a page section key that is also a global section key', () => {
     expect(() => defineCms({ adapter: memoryAdapter(), pages: [...pages, sitePage] })).toThrow(/Section "seo" is on page "about"/);
   });

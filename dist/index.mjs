@@ -16,7 +16,7 @@ import {
   postCmsMessage,
   resolveSectionPage,
   trustedOrigins
-} from "./chunk-CEOSGCRC.mjs";
+} from "./chunk-HPASKW7Y.mjs";
 
 // src/core/theme.ts
 function themeToCssVariables(theme, options = {}) {

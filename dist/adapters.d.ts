@@ -1,4 +1,4 @@
-import { C as CmsStorageAdapter, S as SectionRecord } from './types-SBxa2Bl2.js';
+import { C as CmsStorageAdapter, S as SectionRecord } from './types-C5pvdvMZ.js';
 import 'react';
 
 interface RestAdapterOptions {

@@ -47,6 +47,12 @@ interface PageDef {
      * At most one page may be global.
      */
     global?: boolean;
+    /**
+     * Global page only. False keeps its sections out of every other page's section list, so they
+     * are listed only under "Site settings". A click on the header or footer in any preview still
+     * opens them. Default: true.
+     */
+    listOnEveryPage?: boolean;
     icon?: IconComponent;
     /** Editable sections, in the order they appear in the studio. */
     sections: SectionDef[];

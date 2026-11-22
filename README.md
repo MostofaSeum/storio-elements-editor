@@ -549,6 +549,8 @@ export const cms = defineCms({
 
 In the studio, every page then lists these sections under **Site-wide** after its own sections, and clicking the navbar in any preview opens it. The page menu also has **Site settings (every page)**. A change shows on every page at once.
 
+To keep each page's list short, add `listOnEveryPage: false` to the global page. Its sections are then listed only under **Site settings**. Clicking the navbar or footer in any preview still opens them.
+
 **Header and footer.** Read the content with `useSiteContent()` and add `page="site"` to the section. The component must be inside `<CmsProviders>` in the root layout:
 
 ```tsx
@@ -1039,6 +1041,7 @@ There is no schema to write. The editor reads the section's content and picks a 
 | `pages` | pages, routes, sections and defaults. A [slug] page adds `collection` (and `parent`, the key of its list page) |
 | `icons` | the icons your site can draw, by name; the icon picker offers exactly these ([Icons](#icons)) |
 | `pages[].global` | one page of site-wide content (header, footer, SEO, theme), editable from every page ([Site-wide content](#site-wide-content-header-footer-seo-theme)) |
+| `pages[].listOnEveryPage` | global page only: `false` lists its sections only under Site settings, not on every page |
 | `fonts` | font names your site loads; fields ending in `font` offer exactly these |
 | `adapter` | where content is read from and saved to |
 | `title` | heading of the CMS screen |
