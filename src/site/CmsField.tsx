@@ -7,6 +7,8 @@ import { CmsSectionContext, EDIT_BUTTON_Z_INDEX, claimFieldHover, releaseFieldHo
 import { useCmsContext } from './CmsProvider';
 import { useCmsEditMode } from './preview';
 import { useItemDraft } from './itemDrafts';
+import { fieldStyleToCss, hasFieldStyle, resolveFieldPage, styleId } from '../core/styles';
+import { useStoredFieldStyle } from './fieldStyles';
 
 export interface CmsFieldProps {
   /**
@@ -211,6 +213,56 @@ const FieldFrame: React.FC<FieldFrameProps> = ({ path, name, isEditMode, onOpen,
   );
 };
 
+/**
+ * The page a field's styles belong to. Without a page prop and with a section key used on several
+ * pages, the URL decides after mount (so styles of that field appear after hydration).
+ */
+function useFieldPage(section: string, explicitPage: string | undefined, isEditMode: boolean): string | undefined {
+  const { config } = useCmsContext();
+  const direct = resolveFieldPage(config, section, explicitPage);
+  const [pathname, setPathname] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (!direct) setPathname(window.location.pathname);
+  }, [direct]);
+  const page = direct ?? resolveFieldPage(config, section, undefined, pathname);
+  useEffect(() => {
+    if (isEditMode && !direct && pathname !== undefined && config.pages.filter((p) => p.sections.some((s) => s.key === section)).length > 1) {
+      console.info(`[storio-editor] Section "${section}" is on several pages. Add page="<page key>" to its <CmsSection> so field styles render on the server.`);
+    }
+  }, [isEditMode, direct, pathname, section, config.pages]);
+  return page;
+}
+
+/**
+ * Applies the field's saved (or unsaved, in the studio) style: marks the element with
+ * data-cms-style and writes its CSS in a <style> just before it. A single plain HTML element child
+ * gets the attribute itself; anything else is wrapped in a <span>, only when there is a style.
+ */
+const StyledField: React.FC<{ page: string | undefined; section: string; path: string; children: React.ReactNode }> = ({
+  page,
+  section,
+  path,
+  children,
+}) => {
+  const { styles, config } = useCmsContext();
+  const style = useStoredFieldStyle(styles, page, section, path);
+  if (!page || !hasFieldStyle(style)) return <>{children}</>;
+  const id = styleId(page, section, path);
+  const items = React.Children.toArray(children);
+  const only = items.length === 1 ? items[0] : null;
+  const canMark = React.isValidElement(only) && typeof only.type === 'string';
+  const marked = canMark
+    ? React.cloneElement(only as React.ReactElement<Record<string, unknown>>, { 'data-cms-style': id })
+    : <span data-cms-style={id}>{children}</span>;
+  const css = fieldStyleToCss(id, style, { breakpoints: config.styles?.breakpoints, wrapper: !canMark });
+  return (
+    <>
+      {css && <style data-cms-style-for={id} dangerouslySetInnerHTML={{ __html: css }} />}
+      {marked}
+    </>
+  );
+};
+
 const SectionField: React.FC<Omit<CmsFieldProps, 'collection' | 'item'>> = ({ path, label, section: sectionProp, page, children }) => {
   const surrounding = useContext(CmsSectionContext);
   const name = label ?? labelFromPath(path);
@@ -231,25 +283,45 @@ const SectionField: React.FC<Omit<CmsFieldProps, 'collection' | 'item'>> = ({ pa
   if (!surrounding) return <>{children}</>;
   const targetPage = page ?? surrounding.page;
   return (
+    <SurroundedField path={path} name={name} sectionKey={surrounding.sectionKey} page={targetPage} isEditMode={surrounding.isEditMode} origins={surrounding.origins}>
+      {children}
+    </SurroundedField>
+  );
+};
+
+/** A field inside its <CmsSection>. */
+const SurroundedField: React.FC<{
+  path: string;
+  name: string;
+  sectionKey: string;
+  page?: string;
+  isEditMode: boolean;
+  origins: string[];
+  children: React.ReactNode;
+}> = ({ path, name, sectionKey, page: targetPage, isEditMode, origins, children }) => {
+  const stylePage = useFieldPage(sectionKey, targetPage, isEditMode);
+  return (
     <FieldFrame
       path={path}
       name={name}
-      isEditMode={surrounding.isEditMode}
+      isEditMode={isEditMode}
       onOpen={() =>
         postCmsMessage(
           window.parent,
           {
             type: CMS_MESSAGE.EDIT_SECTION,
-            sectionKey: surrounding.sectionKey,
+            sectionKey,
             ...(targetPage ? { page: targetPage } : {}),
             title: name,
             fieldPath: path,
           },
-          surrounding.origins
+          origins
         )
       }
     >
-      {children}
+      <StyledField page={stylePage} section={sectionKey} path={path}>
+        {children}
+      </StyledField>
     </FieldFrame>
   );
 };
@@ -264,6 +336,7 @@ const OtherSectionField: React.FC<{ path: string; name: string; sectionKey: stri
 }) => {
   const { origins } = useCmsContext();
   const isEditMode = useCmsEditMode(origins);
+  const stylePage = useFieldPage(sectionKey, page, isEditMode);
   return (
     <FieldFrame
       path={path}
@@ -277,7 +350,9 @@ const OtherSectionField: React.FC<{ path: string; name: string; sectionKey: stri
         )
       }
     >
-      {children}
+      <StyledField page={stylePage} section={sectionKey} path={path}>
+        {children}
+      </StyledField>
     </FieldFrame>
   );
 };

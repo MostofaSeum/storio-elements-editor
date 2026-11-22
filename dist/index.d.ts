@@ -1,5 +1,5 @@
-import { a as CmsConfig, P as PageDef, S as SectionRecord, b as SectionDetail, c as SectionMetadata, d as CollectionItemSummary } from './types-C5pvdvMZ.js';
-export { C as CmsStorageAdapter, e as CmsWidgets, f as CodeValue, g as CodeWidgetProps, h as CollectionLimit, I as IconComponent, i as ImagePreset, j as ImagePresetCategory, L as ListOptions, M as MediaItem, k as SaveRecordInput, l as SectionDef } from './types-C5pvdvMZ.js';
+import { a as CmsConfig, P as PageDef, b as StyleProps, F as FieldStyle, c as StyleSheetData, S as SectionRecord, d as SectionDetail, e as SectionMetadata, f as CollectionItemSummary } from './types-D_1RArqc.js';
+export { C as CmsStorageAdapter, g as CmsStyleOptions, h as CmsWidgets, i as CodeValue, j as CodeWidgetProps, k as CollectionLimit, I as IconComponent, l as ImagePreset, m as ImagePresetCategory, L as ListOptions, M as MediaItem, n as SaveRecordInput, o as SectionDef } from './types-D_1RArqc.js';
 import 'react';
 
 /** True for keys safe to use as page or section identifiers in storage and URLs. */
@@ -38,6 +38,47 @@ declare function isColorField(fieldName: string, value: unknown): boolean;
 declare function isFontField(fieldName: string, value: unknown, fonts: string[] | undefined): boolean;
 
 /**
+ * Field styles: the look of one field (colour, size, spacing...) set in the studio's Style tab.
+ * A page's styles are one record, { page, sectionKey: "_styles", content: StyleSheetData }, saved
+ * through the normal storage adapter, so they reach the site with the page content.
+ */
+declare const STYLES_KEY = "_styles";
+/** Default widths at which the tablet and phone values take over. */
+declare const DEFAULT_BREAKPOINTS: {
+    readonly tablet: 1024;
+    readonly phone: 768;
+};
+declare const STYLE_PROPERTIES: (keyof StyleProps)[];
+/** Id of a field in the data-cms-style attribute and in its CSS selector. */
+declare function styleId(page: string, section: string, path: string): string;
+/** Keep only known properties with safe, non-empty string values. */
+declare function sanitizeStyleProps(props: unknown): StyleProps;
+/** True when the field has at least one usable value on any device. */
+declare function hasFieldStyle(style: FieldStyle | undefined | null): boolean;
+/**
+ * CSS for one field: the desktop rules, then media blocks for tablet and phone. The attribute is
+ * repeated in the selector (specificity 0,2,0) so the rules win over single utility classes.
+ * `wrapper`: the element is the <span> the library added, which needs inline-block for box values.
+ */
+declare function fieldStyleToCss(id: string, style: FieldStyle | undefined | null, options?: {
+    breakpoints?: {
+        tablet?: number;
+        phone?: number;
+    };
+    wrapper?: boolean;
+}): string;
+/** Set (or with null, remove) one field's style, keeping every other field of the page. */
+declare function setFieldStyle(sheet: StyleSheetData | undefined | null, section: string, path: string, style: FieldStyle | null): StyleSheetData;
+/** True when a URL path matches a page route; "[slug]" matches one segment. */
+declare function routeMatches(route: string, pathname: string): boolean;
+/**
+ * The page a field's styles belong to: the page given on the field or its section; otherwise the
+ * only page with this section key (the global page included); otherwise the page whose route
+ * matches `pathname`. Undefined when it cannot be told.
+ */
+declare function resolveFieldPage(config: Pick<CmsConfig, 'pages'>, section: string, explicitPage?: string, pathname?: string): string | undefined;
+
+/**
  * Full content of a page: its defaults, with each saved override replacing its
  * section. Unpublished overrides are applied only when `includeDrafts` is true.
  */
@@ -71,6 +112,8 @@ declare const CMS_MESSAGE: {
     readonly CONTENT_UPDATED: "CMS_CONTENT_UPDATED";
     /** studio -> iframe: unsaved values of a collection record, to render immediately. */
     readonly ITEM_DRAFT: "CMS_ITEM_DRAFT";
+    /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+    readonly STYLE_DRAFT: "CMS_STYLE_DRAFT";
 };
 /** Query flag that marks a page as loaded inside the studio. */
 declare const PREVIEW_PARAM = "cms_preview";
@@ -104,6 +147,12 @@ type CmsMessage = {
     collection: string;
     item: string;
     values: Record<string, unknown> | null;
+} | {
+    type: typeof CMS_MESSAGE.STYLE_DRAFT;
+    page: string;
+    sectionKey: string;
+    path: string;
+    style: FieldStyle | null;
 };
 declare function isCmsMessage(data: unknown): data is CmsMessage;
 /** Origin of a URL, or null when it cannot be parsed. */
@@ -148,4 +197,4 @@ declare function groupPageOf(config: Pick<CmsConfig, 'pages'>, page: PageDef): P
  */
 declare function recordPagesOf(config: Pick<CmsConfig, 'pages'>, group: PageDef): PageDef[];
 
-export { CMS_MESSAGE, CmsConfig, type CmsMessage, CollectionItemSummary, EDIT_MODE_PARAM, PREVIEW_PARAM, PageDef, SectionDetail, SectionMetadata, SectionRecord, buildPreviewUrl, defineCms, fillRoute, findGlobalPage, findPage, getSectionDetail, getSectionKeys, groupPageOf, isCmsMessage, isColorField, isDynamicRoute, isFontField, isValidKey, listManagedSections, listenForCmsMessages, mergePageContent, originOf, postCmsMessage, publicUrl, recordPagesOf, resolveSectionPage, themeToCss, themeToCssVariables, topLevelPages, trustedOrigins };
+export { CMS_MESSAGE, CmsConfig, type CmsMessage, CollectionItemSummary, DEFAULT_BREAKPOINTS, EDIT_MODE_PARAM, FieldStyle, PREVIEW_PARAM, PageDef, STYLES_KEY, STYLE_PROPERTIES, SectionDetail, SectionMetadata, SectionRecord, StyleProps, StyleSheetData, buildPreviewUrl, defineCms, fieldStyleToCss, fillRoute, findGlobalPage, findPage, getSectionDetail, getSectionKeys, groupPageOf, hasFieldStyle, isCmsMessage, isColorField, isDynamicRoute, isFontField, isValidKey, listManagedSections, listenForCmsMessages, mergePageContent, originOf, postCmsMessage, publicUrl, recordPagesOf, resolveFieldPage, resolveSectionPage, routeMatches, sanitizeStyleProps, setFieldStyle, styleId, themeToCss, themeToCssVariables, topLevelPages, trustedOrigins };

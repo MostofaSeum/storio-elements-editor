@@ -17,13 +17,15 @@ import {
   Globe,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { CollectionItemSummary, PageDef, SectionDef, SectionDetail } from '../core/types';
+import type { CollectionItemSummary, FieldStyle, PageDef, SectionDef, SectionDetail, StyleSheetData } from '../core/types';
 import { findGlobalPage, findPage, resolveSectionPage } from '../core/defineCms';
 import { fillRoute, groupPageOf, isDynamicRoute, recordPagesOf, topLevelPages } from '../core/collections';
 import { getSectionDetail } from '../core/merge';
 import { CMS_MESSAGE, listenForCmsMessages, postCmsMessage } from '../core/messages';
-import { buildPreviewUrl, publicUrl } from '../core/paths';
+import { buildPreviewUrl, getAtPath, parseFieldPath, publicUrl } from '../core/paths';
+import { STYLES_KEY, hasFieldStyle, setFieldStyle } from '../core/styles';
 import { SectionEditorForm } from './SectionEditorForm';
+import { StylePanel } from './StylePanel';
 import { useStudio } from './StudioContext';
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
@@ -473,6 +475,82 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
     });
   };
 
+  // ---- Style tab of a single field -------------------------------------------------------------
+  const stylesEnabled = config.styles?.enabled !== false;
+  const isStyleTarget = stylesEnabled && Boolean(activeFieldPath) && activeSectionKey !== RECORD_SECTION;
+  const [formTab, setFormTab] = useState<'content' | 'style'>('content');
+  const [styleSheet, setStyleSheet] = useState<{ page: string; sheet: StyleSheetData } | null>(null);
+  const [fieldStyle, setFieldStyleDraft] = useState<FieldStyle | undefined>(undefined);
+  const [isSavingStyle, setIsSavingStyle] = useState(false);
+  const showStyleTab = isStyleTarget && formTab === 'style';
+
+  const loadStyleSheet = useCallback(
+    async (page: string): Promise<StyleSheetData> => {
+      const record = await adapter.getRecord(page, STYLES_KEY, { includeDrafts: true });
+      const sheet = record?.content && typeof record.content === 'object' ? (record.content as StyleSheetData) : {};
+      setStyleSheet({ page, sheet });
+      return sheet;
+    },
+    [adapter]
+  );
+
+  // Load the page's styles when a field opens, and show that field's saved style.
+  useEffect(() => {
+    if (!isStyleTarget || !activeFieldPath) return;
+    let alive = true;
+    loadStyleSheet(sectionPage)
+      .then((sheet) => {
+        if (alive) setFieldStyleDraft(sheet[activeSectionKey]?.[activeFieldPath]);
+      })
+      .catch(() => toast.error('Could not load the styles of this page.'));
+    return () => {
+      alive = false;
+    };
+  }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
+
+  useEffect(() => {
+    if (!activeFieldPath) setFormTab('content');
+  }, [activeFieldPath]);
+
+  const savedFieldStyle =
+    styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : undefined;
+
+  const handleStyleChange = (style: FieldStyle) => {
+    if (!activeFieldPath) return;
+    setFieldStyleDraft(style);
+    hasUnsavedEdits.current = true;
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+  };
+
+  /** Write this field's style (or remove it with null) into the page's "_styles" record. */
+  const writeFieldStyle = async (style: FieldStyle | null) => {
+    if (!activeFieldPath) return;
+    setIsSavingStyle(true);
+    try {
+      // Start from the stored record, so styles saved meanwhile for other fields are kept.
+      const current = await loadStyleSheet(sectionPage);
+      const next = setFieldStyle(current, activeSectionKey, activeFieldPath, style);
+      if (Object.keys(next).length === 0) await adapter.deleteRecord(sectionPage, STYLES_KEY);
+      else await adapter.saveRecord({ page: sectionPage, sectionKey: STYLES_KEY, content: next, isPublished: true });
+      setStyleSheet({ page: sectionPage, sheet: next });
+      setFieldStyleDraft(next[activeSectionKey]?.[activeFieldPath]);
+      hasUnsavedEdits.current = false;
+      sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
+      toast.success(style ? 'Styles saved and published' : 'Styles reset');
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'Could not save the styles.');
+    } finally {
+      setIsSavingStyle(false);
+    }
+  };
+
+  const fieldValue =
+    activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : undefined;
+  const isImageValue =
+    typeof fieldValue === 'string' &&
+    (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) ||
+      /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ''));
+
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
@@ -755,6 +833,42 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
                 <span>Loading section form...</span>
               </div>
             ) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? (
+              <>
+              {isStyleTarget && (
+                <div role="tablist" aria-label="Field editor" className="flex items-center gap-1 p-1 mb-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  {(['content', 'style'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={formTab === tab}
+                      onClick={() => setFormTab(tab)}
+                      className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
+                        formTab === tab ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showStyleTab && (
+                <StylePanel
+                  value={fieldStyle}
+                  device={device}
+                  onDeviceChange={setDevice}
+                  options={config.styles}
+                  fonts={config.fonts}
+                  isImage={isImageValue}
+                  onChange={handleStyleChange}
+                  onSave={() => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null)}
+                  onReset={() => writeFieldStyle(null)}
+                  isSaving={isSavingStyle}
+                  hasSavedStyle={hasFieldStyle(savedFieldStyle)}
+                />
+              )}
+              {/* Kept mounted while the Style tab is open, so unsaved content edits survive. */}
+              <div hidden={showStyleTab}>
               <SectionEditorForm
                 page={sectionPage}
                 sectionKey={activeSectionKey}
@@ -775,6 +889,8 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
                 onReset={handleResetSection}
                 onChangeDraft={handleDraftChange}
               />
+              </div>
+              </>
             ) : (
               <div className="p-8 text-center text-xs text-slate-400">
                 Select a section to begin editing.

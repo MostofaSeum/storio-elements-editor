@@ -1,4 +1,4 @@
-import { d as CollectionItemSummary, C as CmsStorageAdapter, a as CmsConfig } from './types-C5pvdvMZ.js';
+import { f as CollectionItemSummary, C as CmsStorageAdapter, a as CmsConfig } from './types-D_1RArqc.js';
 import { Metadata } from 'next';
 import 'react';
 

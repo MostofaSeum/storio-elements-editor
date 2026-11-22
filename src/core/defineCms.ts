@@ -38,6 +38,9 @@ export function defineCms(config: CmsConfig): CmsConfig {
     }
     const sectionKeys = new Set<string>();
     for (const section of page.sections) {
+      if (section.key === '_styles') {
+        throw new Error(`[storio-editor] Section key "_styles" on page "${page.key}" is reserved for field styles. Rename the section.`);
+      }
       if (!isValidKey(section.key)) {
         throw new Error(`[storio-editor] Invalid section key "${section.key}" on page "${page.key}".`);
       }

@@ -153,6 +153,59 @@ interface CmsWidgets {
      */
     code?: ComponentType<CodeWidgetProps>;
 }
+/** The look of one field on one device, as CSS values ("#7c3aed", "2rem", "var(--color-brand)"). */
+interface StyleProps {
+    color?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    lineHeight?: string;
+    letterSpacing?: string;
+    textAlign?: string;
+    fontFamily?: string;
+    marginTop?: string;
+    marginRight?: string;
+    marginBottom?: string;
+    marginLeft?: string;
+    paddingTop?: string;
+    paddingRight?: string;
+    paddingBottom?: string;
+    paddingLeft?: string;
+    width?: string;
+    maxWidth?: string;
+    height?: string;
+    backgroundColor?: string;
+    borderRadius?: string;
+    borderWidth?: string;
+    borderColor?: string;
+    objectFit?: string;
+    opacity?: string;
+}
+/** One field's style. Desktop is the base; tablet and phone override it on narrower screens. */
+interface FieldStyle {
+    desktop?: StyleProps;
+    tablet?: StyleProps;
+    phone?: StyleProps;
+}
+/** A page's field styles (the "_styles" record): section key → field path → style. */
+type StyleSheetData = Record<string, Record<string, FieldStyle>>;
+/** Presets and settings of the Style tab. Values can be CSS variables, e.g. "var(--color-brand-600)". */
+interface CmsStyleOptions {
+    /** False hides the Style tab. Default: true. */
+    enabled?: boolean;
+    /** Colour presets by name, e.g. { Brand: 'var(--color-brand-600)' }. */
+    colors?: Record<string, string>;
+    /** Font size presets, e.g. { S: '1rem', M: '1.5rem', L: '2.5rem' }. */
+    fontSizes?: Record<string, string>;
+    /** Spacing presets for margin and padding, e.g. { None: '0', Small: '0.5rem' }. */
+    spacing?: Record<string, string>;
+    /** Corner radius presets, e.g. { None: '0', Round: '9999px' }. */
+    radii?: Record<string, string>;
+    /** Widths (px) below which the tablet and phone values apply. Default: 1024 and 768. */
+    breakpoints?: {
+        tablet?: number;
+        phone?: number;
+    };
+}
 interface CmsConfig {
     /** Pages the studio lists and the site can read. */
     pages: PageDef[];
@@ -180,6 +233,11 @@ interface CmsConfig {
      */
     fonts?: string[];
     /**
+     * The Style tab of a single field: presets offered next to the custom inputs, and breakpoints.
+     * Styles are saved per page as the record "_styles", through the same storage adapter.
+     */
+    styles?: CmsStyleOptions;
+    /**
      * Item limits for array fields. Keys are tried in this order:
      * "page.section.path", "page.path", "section.path", "page.section".
      */
@@ -202,4 +260,4 @@ interface SectionDetail<T = unknown> extends SectionMetadata {
     content: T;
 }
 
-export type { CmsStorageAdapter as C, IconComponent as I, ListOptions as L, MediaItem as M, PageDef as P, SectionRecord as S, CmsConfig as a, SectionDetail as b, SectionMetadata as c, CollectionItemSummary as d, CmsWidgets as e, CodeValue as f, CodeWidgetProps as g, CollectionLimit as h, ImagePreset as i, ImagePresetCategory as j, SaveRecordInput as k, SectionDef as l };
+export type { CmsStorageAdapter as C, FieldStyle as F, IconComponent as I, ListOptions as L, MediaItem as M, PageDef as P, SectionRecord as S, CmsConfig as a, StyleProps as b, StyleSheetData as c, SectionDetail as d, SectionMetadata as e, CollectionItemSummary as f, CmsStyleOptions as g, CmsWidgets as h, CodeValue as i, CodeWidgetProps as j, CollectionLimit as k, ImagePreset as l, ImagePresetCategory as m, SaveRecordInput as n, SectionDef as o };

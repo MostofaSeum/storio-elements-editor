@@ -1,3 +1,5 @@
+import type { FieldStyle } from './types';
+
 /**
  * Messages exchanged between the studio (parent window) and the public page in
  * the preview iframe. Names are part of the public protocol; keep them stable.
@@ -15,6 +17,8 @@ export const CMS_MESSAGE = {
   CONTENT_UPDATED: 'CMS_CONTENT_UPDATED',
   /** studio -> iframe: unsaved values of a collection record, to render immediately. */
   ITEM_DRAFT: 'CMS_ITEM_DRAFT',
+  /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+  STYLE_DRAFT: 'CMS_STYLE_DRAFT',
 } as const;
 
 /** Query flag that marks a page as loaded inside the studio. */
@@ -38,7 +42,8 @@ export type CmsMessage =
   | { type: typeof CMS_MESSAGE.SET_EDIT_MODE; enabled: boolean }
   | { type: typeof CMS_MESSAGE.DRAFT_PREVIEW; page: string; sectionKey: string; draftContent: unknown }
   | { type: typeof CMS_MESSAGE.CONTENT_UPDATED }
-  | { type: typeof CMS_MESSAGE.ITEM_DRAFT; collection: string; item: string; values: Record<string, unknown> | null };
+  | { type: typeof CMS_MESSAGE.ITEM_DRAFT; collection: string; item: string; values: Record<string, unknown> | null }
+  | { type: typeof CMS_MESSAGE.STYLE_DRAFT; page: string; sectionKey: string; path: string; style: FieldStyle | null };
 
 const MESSAGE_TYPES = new Set<string>(Object.values(CMS_MESSAGE));
 

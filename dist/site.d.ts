@@ -1,5 +1,5 @@
 import React from 'react';
-import { C as CmsConfig, I as IconComponent } from './types-XaBfnti4.js';
+import { C as CmsConfig, I as IconComponent } from './types-DLNWxJXK.js';
 
 interface CmsProviderProps {
     config: CmsConfig;

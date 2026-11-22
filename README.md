@@ -600,6 +600,39 @@ With Tailwind v4 you can point theme colours at them: `@theme inline { --color-b
 
 With Django and `ALLOWED_PAGES` set, add `"site"` to it.
 
+### Field styles (colour, size, spacing)
+
+When a field is opened with its own pencil, the form has two tabs: **Content** and **Style**. The Style tab changes the look of that one element: colour, font size, weight, line height, letter spacing, alignment, font, margin, padding, width, max width, height, background, corner radius, border, and for images fit and opacity. The preview changes as the editor works.
+
+Every value can be picked from a preset or typed in (any CSS value: `#7c3aed`, `2rem`, `24px`, `50%`, `var(--color-brand-600)`). A **Desktop / Tablet / Phone** switch at the top sets values per screen size. Tablet and phone use the wider value until they get their own. The switch also resizes the preview.
+
+Offer your site's own colours and sizes as presets in `cms.config.ts`. Point them at your CSS variables, so a later change of a variable also changes every element that uses that preset:
+
+```ts
+export const cms = defineCms({
+  styles: {
+    colors:    { Brand: 'var(--color-brand-600)', Accent: 'var(--color-accent-500)', Ink: 'var(--color-ink)' },
+    fontSizes: { S: '1rem', M: '1.5rem', L: '2.5rem', XL: '4rem' },
+    spacing:   { None: '0', Small: '0.5rem', Medium: '1rem', Large: '2rem' },
+    radii:     { None: '0', Small: '0.5rem', Round: '9999px' },
+    breakpoints: { tablet: 1024, phone: 768 },   // the defaults
+  },
+  fonts: ['Inter', 'Lora'],                       // optional: the Font row
+  // ...
+});
+```
+
+Without presets the tab offers only the inputs. `styles: { enabled: false }` hides the tab.
+
+How it works:
+
+- A page's styles are saved as one record, `{ page, sectionKey: "_styles" }`, through the same storage adapter as the content. `_styles` is therefore a reserved section key. If you wrote your own storage adapter that only accepts known sections, let it accept `_styles` too.
+- Styles are published at once (Save & Publish). They have no drafts. **Reset styles** removes the field's style.
+- On the site, `<CmsField>` puts `data-cms-style="<page>:<section>:<path>"` on its element and writes the rules in a `<style>` just before it, with `@media` blocks for tablet and phone. The rules beat a single utility class (such as Tailwind's) without `!important`. A field without styles renders exactly as before.
+- When the field's child is a plain HTML element (`<h1>`, `<img>`, `<a>`), that element is styled. Text and custom components are wrapped in a `<span>`, only once they have a style. A wrapper that gets a size, vertical spacing or background becomes `inline-block`.
+- The styles come with the page content loaded on the server (`getAllPageContent`), so visitors see no flash.
+- When the same section key is on several pages, add `page="<page key>"` to that `<CmsSection>`. Without it, the field finds its page from the URL after the page has loaded, and the styles appear a moment later.
+
 ### Pages with [slug] or [id]
 
 A page like `app/blog/[slug]/page.tsx` shows one record of your database at a time: one file, many pages (`/blog/school`, `/blog/college`). The CMS can edit both parts of it:
@@ -1043,6 +1076,7 @@ There is no schema to write. The editor reads the section's content and picks a 
 | `pages[].global` | one page of site-wide content (header, footer, SEO, theme), editable from every page ([Site-wide content](#site-wide-content-header-footer-seo-theme)) |
 | `pages[].listOnEveryPage` | global page only: `false` lists its sections only under Site settings, not on every page |
 | `fonts` | font names your site loads; fields ending in `font` offer exactly these |
+| `styles` | presets and breakpoints of the Style tab: `colors`, `fontSizes`, `spacing`, `radii`, `breakpoints`, `enabled` ([Field styles](#field-styles-colour-size-spacing)) |
 | `adapter` | where content is read from and saved to |
 | `title` | heading of the CMS screen |
 | `publicSiteUrl` | site base URL when the CMS runs on another origin |
@@ -1064,7 +1098,7 @@ There is no schema to write. The editor reads the section's content and picks a 
 | `<CmsProvider config>` | `/site` | wrap the site once (root layout) |
 | `usePageContent(pageKey, { initialData? })` | `/site` | read a page's content, with live preview in the CMS |
 | `<CmsSection sectionKey title page? activeOnPath? buttonPlacement?>` | `/site` | make a block editable; `page="site"` for a site-wide block such as the navbar |
-| `<CmsField path label?>` | `/site` | give one value inside a `<CmsSection>` its own pencil |
+| `<CmsField path label?>` | `/site` | give one value inside a `<CmsSection>` its own pencil, with a Content and a Style tab |
 | `<CmsField page? section path label?>` | `/site` | a value of another section, also outside any `<CmsSection>` (the site phone number in a page body) |
 | `useSiteContent({ initialData? })` | `/site` | read the global page's content on any page, with live preview |
 | `<CmsThemeStyle section? prefix? selector?>` | `/site` | write the global page's `theme` section as CSS variables |

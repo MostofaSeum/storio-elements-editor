@@ -1,11 +1,13 @@
 "use client";
 import {
   CMS_MESSAGE,
+  STYLES_KEY,
   buildPreviewUrl,
   findGlobalPage,
   findPage,
   getAtPath,
   getSectionDetail,
+  hasFieldStyle,
   isColorField,
   isFontField,
   listenForCmsMessages,
@@ -14,8 +16,9 @@ import {
   postCmsMessage,
   publicUrl,
   resolveSectionPage,
+  setFieldStyle,
   trustedOrigins
-} from "./chunk-YQGKZECL.mjs";
+} from "./chunk-S5HJL5XS.mjs";
 
 // src/admin/CmsStudio.tsx
 import { useState as useState8, useEffect as useEffect7 } from "react";
@@ -46,13 +49,13 @@ function useStudio() {
 // src/admin/CanvasEditor.tsx
 import React7, { useState as useState7, useEffect as useEffect6, useRef as useRef3, useCallback } from "react";
 import {
-  Monitor as Monitor2,
-  Tablet as Tablet2,
-  Smartphone as Smartphone2,
-  RotateCcw as RotateCcw2,
+  Monitor as Monitor3,
+  Tablet as Tablet3,
+  Smartphone as Smartphone3,
+  RotateCcw as RotateCcw3,
   ExternalLink as ExternalLink3,
   Layers,
-  Loader2 as Loader22,
+  Loader2 as Loader23,
   CheckCircle2 as CheckCircle22,
   MousePointerClick,
   ChevronRight,
@@ -1771,13 +1774,234 @@ var SectionEditorForm = ({
   ] });
 };
 
-// src/admin/CanvasEditor.tsx
+// src/admin/StylePanel.tsx
+import { Monitor as Monitor2, Tablet as Tablet2, Smartphone as Smartphone2, RotateCcw as RotateCcw2, Save as Save2, Loader2 as Loader22, X as X5 } from "lucide-react";
 import { Fragment as Fragment3, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
+var DEVICES = [
+  { key: "desktop", style: "desktop", label: "Desktop", icon: Monitor2 },
+  { key: "tablet", style: "tablet", label: "Tablet", icon: Tablet2 },
+  { key: "mobile", style: "phone", label: "Phone", icon: Smartphone2 }
+];
+var FALLBACK = { desktop: [], tablet: ["desktop"], phone: ["tablet", "desktop"] };
+var inputClass = "w-full min-w-0 text-xs px-2.5 py-1.5 rounded-lg bg-slate-950/90 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400 transition-colors";
+var chipClass = (active) => `px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors ${active ? "bg-purple-600 text-white border-purple-400" : "bg-slate-950/70 text-slate-300 border-slate-700 hover:border-slate-500"}`;
+var Row = ({
+  label,
+  ownValue,
+  inheritedValue,
+  onClear,
+  children
+}) => /* @__PURE__ */ jsxs6("div", { className: "space-y-1", children: [
+  /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-2", children: [
+    /* @__PURE__ */ jsx7("span", { className: "text-[11px] font-semibold text-slate-300", children: label }),
+    ownValue ? /* @__PURE__ */ jsx7("button", { type: "button", onClick: onClear, className: "text-slate-500 hover:text-rose-300", title: `Clear ${label}`, "aria-label": `Clear ${label}`, children: /* @__PURE__ */ jsx7(X5, { className: "w-3 h-3" }) }) : inheritedValue ? /* @__PURE__ */ jsxs6("span", { className: "text-[10px] text-slate-500", children: [
+      "inherited: ",
+      inheritedValue
+    ] }) : null
+  ] }),
+  children
+] });
+var Group = ({ title, children }) => /* @__PURE__ */ jsxs6("fieldset", { className: "space-y-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3", children: [
+  /* @__PURE__ */ jsx7("legend", { className: "px-1 text-[10px] font-bold uppercase tracking-wider text-purple-300", children: title }),
+  children
+] });
+function pickerColor(value) {
+  const v = (value ?? "").trim();
+  if (/^#[0-9a-f]{6}$/i.test(v)) return v;
+  if (/^#[0-9a-f]{3}$/i.test(v)) return `#${v.slice(1).split("").map((c) => c + c).join("")}`;
+  return "#000000";
+}
+var StylePanel = ({
+  value,
+  device,
+  onDeviceChange,
+  options,
+  fonts,
+  isImage,
+  onChange,
+  onSave,
+  onReset,
+  isSaving,
+  hasSavedStyle
+}) => {
+  const styleDevice = DEVICES.find((d) => d.key === device)?.style ?? "desktop";
+  const own = value?.[styleDevice] ?? {};
+  const inherited = (key) => {
+    for (const d of FALLBACK[styleDevice]) {
+      const v = value?.[d]?.[key];
+      if (v) return v;
+    }
+    return void 0;
+  };
+  const set = (changes) => {
+    const next = { ...own };
+    for (const [key, v] of Object.entries(changes)) {
+      if (v === void 0 || v.trim() === "") delete next[key];
+      else next[key] = v;
+    }
+    const style = { ...value ?? {} };
+    if (Object.keys(next).length > 0) style[styleDevice] = next;
+    else delete style[styleDevice];
+    onChange(style);
+  };
+  const row = (label, prop, children) => /* @__PURE__ */ jsx7(Row, { label, ownValue: own[prop], inheritedValue: inherited(prop), onClear: () => set({ [prop]: void 0 }), children });
+  const textInput = (prop, placeholder) => /* @__PURE__ */ jsx7(
+    "input",
+    {
+      type: "text",
+      value: own[prop] ?? "",
+      placeholder: inherited(prop) ?? placeholder,
+      "aria-label": prop,
+      onChange: (e) => set({ [prop]: e.target.value }),
+      className: inputClass
+    }
+  );
+  const presets = (prop, list) => list && Object.keys(list).length > 0 ? /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(list).map(([name, v]) => /* @__PURE__ */ jsx7("button", { type: "button", className: chipClass(own[prop] === v), onClick: () => set({ [prop]: v }), title: v, children: name }, name)) }) : null;
+  const colorRow = (label, prop) => row(
+    label,
+    prop,
+    /* @__PURE__ */ jsxs6(Fragment3, { children: [
+      options?.colors && Object.keys(options.colors).length > 0 && /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.colors).map(([name, v]) => /* @__PURE__ */ jsxs6("button", { type: "button", className: `${chipClass(own[prop] === v)} flex items-center gap-1`, onClick: () => set({ [prop]: v }), title: v, children: [
+        /* @__PURE__ */ jsx7("span", { className: "w-3 h-3 rounded-full border border-white/30", style: { background: v } }),
+        name
+      ] }, name)) }),
+      /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ jsx7(
+          "input",
+          {
+            type: "color",
+            value: pickerColor(own[prop] ?? inherited(prop)),
+            "aria-label": `${label} picker`,
+            onChange: (e) => set({ [prop]: e.target.value }),
+            className: "h-8 w-10 shrink-0 cursor-pointer rounded-md border border-slate-700 bg-slate-950/90 p-0.5"
+          }
+        ),
+        textInput(prop, "#000000 or var(--color)")
+      ] })
+    ] })
+  );
+  const sides = (group) => {
+    const keys = ["Top", "Right", "Bottom", "Left"].map((side) => `${group}${side}`);
+    const all = (v) => set(Object.fromEntries(keys.map((k) => [k, v])));
+    const allSame = keys.every((k) => own[k] && own[k] === own[keys[0]]) ? own[keys[0]] : void 0;
+    return /* @__PURE__ */ jsxs6("div", { className: "space-y-1", children: [
+      /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx7("span", { className: "text-[11px] font-semibold text-slate-300 capitalize", children: group }),
+        keys.some((k) => own[k]) && /* @__PURE__ */ jsx7("button", { type: "button", onClick: () => all(void 0), className: "text-slate-500 hover:text-rose-300", "aria-label": `Clear ${group}`, children: /* @__PURE__ */ jsx7(X5, { className: "w-3 h-3" }) })
+      ] }),
+      options?.spacing && /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.spacing).map(([name, v]) => /* @__PURE__ */ jsx7("button", { type: "button", className: chipClass(allSame === v), onClick: () => all(v), title: v, children: name }, name)) }),
+      /* @__PURE__ */ jsx7("div", { className: "grid grid-cols-4 gap-1", children: keys.map((k, i) => /* @__PURE__ */ jsx7(
+        "input",
+        {
+          type: "text",
+          value: own[k] ?? "",
+          placeholder: inherited(k) ?? ["\u2191", "\u2192", "\u2193", "\u2190"][i],
+          "aria-label": k,
+          title: k,
+          onChange: (e) => set({ [k]: e.target.value }),
+          className: `${inputClass} text-center px-1`
+        },
+        k
+      )) })
+    ] });
+  };
+  return /* @__PURE__ */ jsxs6("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
+    /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-2", children: [
+      /* @__PURE__ */ jsx7("span", { className: "text-xs font-bold text-white", children: "Device" }),
+      /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl", children: DEVICES.map((d) => /* @__PURE__ */ jsxs6(
+        "button",
+        {
+          type: "button",
+          onClick: () => onDeviceChange(d.key),
+          "aria-pressed": device === d.key,
+          className: `flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium ${device === d.key ? "bg-purple-900/80 text-purple-100 border border-purple-500/40" : "text-slate-400 hover:text-white"}`,
+          children: [
+            /* @__PURE__ */ jsx7(d.icon, { className: "w-3.5 h-3.5" }),
+            d.label
+          ]
+        },
+        d.key
+      )) })
+    ] }),
+    styleDevice !== "desktop" && /* @__PURE__ */ jsxs6("p", { className: "text-[11px] text-slate-400", children: [
+      "Empty values use the ",
+      styleDevice === "phone" ? "tablet or desktop" : "desktop",
+      " value."
+    ] }),
+    /* @__PURE__ */ jsxs6(Group, { title: "Typography", children: [
+      colorRow("Colour", "color"),
+      row("Font size", "fontSize", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        presets("fontSize", options?.fontSizes),
+        textInput("fontSize", "e.g. 2rem or 32px")
+      ] })),
+      row("Weight", "fontWeight", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
+      fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
+      /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-2 gap-2", children: [
+        row("Line height", "lineHeight", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("lineHeight", "e.g. 1.4") })),
+        row("Letter spacing", "letterSpacing", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+      ] }),
+      row("Align", "textAlign", /* @__PURE__ */ jsx7(Fragment3, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
+    ] }),
+    /* @__PURE__ */ jsxs6(Group, { title: "Spacing", children: [
+      sides("margin"),
+      sides("padding")
+    ] }),
+    /* @__PURE__ */ jsx7(Group, { title: "Size", children: /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
+      row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "auto") })),
+      row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "none") })),
+      row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "auto") }))
+    ] }) }),
+    /* @__PURE__ */ jsxs6(Group, { title: "Background & border", children: [
+      colorRow("Background", "backgroundColor"),
+      row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        presets("borderRadius", options?.radii),
+        textInput("borderRadius", "e.g. 12px")
+      ] })),
+      row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
+      colorRow("Border colour", "borderColor")
+    ] }),
+    isImage && /* @__PURE__ */ jsxs6(Group, { title: "Image", children: [
+      row("Fit", "objectFit", /* @__PURE__ */ jsx7(Fragment3, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
+      row("Opacity", "opacity", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("opacity", "0 to 1") }))
+    ] }),
+    /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
+      /* @__PURE__ */ jsxs6(
+        "button",
+        {
+          type: "button",
+          onClick: () => void onReset(),
+          disabled: isSaving || !hasSavedStyle,
+          className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-amber-200 bg-amber-950/40 border border-amber-700/60 hover:bg-amber-900/60 disabled:opacity-40",
+          children: [
+            /* @__PURE__ */ jsx7(RotateCcw2, { className: "w-3.5 h-3.5" }),
+            "Reset styles"
+          ]
+        }
+      ),
+      /* @__PURE__ */ jsxs6(
+        "button",
+        {
+          type: "button",
+          onClick: () => void onSave(),
+          disabled: isSaving,
+          className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 border border-purple-400 disabled:opacity-50",
+          children: [
+            isSaving ? /* @__PURE__ */ jsx7(Loader22, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsx7(Save2, { className: "w-3.5 h-3.5" }),
+            "Save & Publish"
+          ]
+        }
+      )
+    ] })
+  ] });
+};
+
+// src/admin/CanvasEditor.tsx
+import { Fragment as Fragment4, jsx as jsx8, jsxs as jsxs7 } from "react/jsx-runtime";
 var RECORD_SECTION = ":record";
 var DEVICE_VIEWPORTS = {
-  desktop: { label: "Desktop", width: 1280, icon: Monitor2 },
-  tablet: { label: "Tablet", width: 768, icon: Tablet2 },
-  mobile: { label: "Mobile", width: 390, icon: Smartphone2 }
+  desktop: { label: "Desktop", width: 1280, icon: Monitor3 },
+  tablet: { label: "Tablet", width: 768, icon: Tablet3 },
+  mobile: { label: "Mobile", width: 390, icon: Smartphone3 }
 };
 var CanvasEditor = ({ initialPage, onPageChange }) => {
   const { config, origins } = useStudio();
@@ -2110,6 +2334,63 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       values: draft
     });
   };
+  const stylesEnabled = config.styles?.enabled !== false;
+  const isStyleTarget = stylesEnabled && Boolean(activeFieldPath) && activeSectionKey !== RECORD_SECTION;
+  const [formTab, setFormTab] = useState7("content");
+  const [styleSheet, setStyleSheet] = useState7(null);
+  const [fieldStyle, setFieldStyleDraft] = useState7(void 0);
+  const [isSavingStyle, setIsSavingStyle] = useState7(false);
+  const showStyleTab = isStyleTarget && formTab === "style";
+  const loadStyleSheet = useCallback(
+    async (page) => {
+      const record = await adapter.getRecord(page, STYLES_KEY, { includeDrafts: true });
+      const sheet = record?.content && typeof record.content === "object" ? record.content : {};
+      setStyleSheet({ page, sheet });
+      return sheet;
+    },
+    [adapter]
+  );
+  useEffect6(() => {
+    if (!isStyleTarget || !activeFieldPath) return;
+    let alive = true;
+    loadStyleSheet(sectionPage).then((sheet) => {
+      if (alive) setFieldStyleDraft(sheet[activeSectionKey]?.[activeFieldPath]);
+    }).catch(() => toast4.error("Could not load the styles of this page."));
+    return () => {
+      alive = false;
+    };
+  }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
+  useEffect6(() => {
+    if (!activeFieldPath) setFormTab("content");
+  }, [activeFieldPath]);
+  const savedFieldStyle = styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : void 0;
+  const handleStyleChange = (style) => {
+    if (!activeFieldPath) return;
+    setFieldStyleDraft(style);
+    hasUnsavedEdits.current = true;
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+  };
+  const writeFieldStyle = async (style) => {
+    if (!activeFieldPath) return;
+    setIsSavingStyle(true);
+    try {
+      const current = await loadStyleSheet(sectionPage);
+      const next = setFieldStyle(current, activeSectionKey, activeFieldPath, style);
+      if (Object.keys(next).length === 0) await adapter.deleteRecord(sectionPage, STYLES_KEY);
+      else await adapter.saveRecord({ page: sectionPage, sectionKey: STYLES_KEY, content: next, isPublished: true });
+      setStyleSheet({ page: sectionPage, sheet: next });
+      setFieldStyleDraft(next[activeSectionKey]?.[activeFieldPath]);
+      hasUnsavedEdits.current = false;
+      sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
+      toast4.success(style ? "Styles saved and published" : "Styles reset");
+    } catch (err) {
+      toast4.error(err instanceof Error && err.message ? err.message : "Could not save the styles.");
+    } finally {
+      setIsSavingStyle(false);
+    }
+  };
+  const fieldValue = activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : void 0;
+  const isImageValue = typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
@@ -2117,25 +2398,25 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const activeSectionDef = availableSections.find((s) => s.key === activeSectionKey);
   const currentSectionLabel = activeSectionDef?.label || activeSectionKey.replace(/([A-Z])/g, " $1");
   if (!pageDef) {
-    return /* @__PURE__ */ jsxs6("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
+    return /* @__PURE__ */ jsxs7("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
       "No pages configured. Add pages to the ",
-      /* @__PURE__ */ jsx7("code", { className: "text-purple-300", children: "pages" }),
+      /* @__PURE__ */ jsx8("code", { className: "text-purple-300", children: "pages" }),
       " array of your CMS config."
     ] });
   }
-  return /* @__PURE__ */ jsxs6("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs6("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
-      /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 flex-wrap", children: [
-        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
+  return /* @__PURE__ */ jsxs7("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs7("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
+      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 flex-wrap", children: [
+        /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
           React7.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
-          /* @__PURE__ */ jsx7("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
-          /* @__PURE__ */ jsxs6("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
+          /* @__PURE__ */ jsx8("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
+          /* @__PURE__ */ jsxs7("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
             "(",
             currentRoute,
             ")"
           ] })
         ] }),
-        topLevelPages(config).length > 1 && /* @__PURE__ */ jsxs6(
+        topLevelPages(config).length > 1 && /* @__PURE__ */ jsxs7(
           "select",
           {
             value: groupPage?.key ?? activePage,
@@ -2145,20 +2426,20 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": "Page to edit",
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-200 focus:outline-none focus:border-purple-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ jsxs6("option", { value: p.key, children: [
+              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ jsxs7("option", { value: p.key, children: [
                 p.title,
                 " (",
                 p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, "") || "/" : p.route,
                 ")"
               ] }, p.key)),
-              globalPage && /* @__PURE__ */ jsxs6("option", { value: globalPage.key, children: [
+              globalPage && /* @__PURE__ */ jsxs7("option", { value: globalPage.key, children: [
                 globalPage.title || "Site settings",
                 " (every page)"
               ] })
             ]
           }
         ),
-        groupPage && recordPages.length > 0 && /* @__PURE__ */ jsxs6(
+        groupPage && recordPages.length > 0 && /* @__PURE__ */ jsxs7(
           "select",
           {
             value: pageDef?.collection && activeItem ? `${pageDef.key}::${activeItem.id}` : "home",
@@ -2166,40 +2447,40 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": `Page of ${groupPage.title} to edit`,
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-sky-500/40 text-sky-200 focus:outline-none focus:border-sky-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              !groupPage.collection && /* @__PURE__ */ jsxs6("option", { value: "home", children: [
+              !groupPage.collection && /* @__PURE__ */ jsxs7("option", { value: "home", children: [
                 groupPage.title,
                 " home (",
                 groupPage.route,
                 ")"
               ] }),
-              groupPage.collection && !activeItem && /* @__PURE__ */ jsx7("option", { value: "home", children: "Pick a record" }),
+              groupPage.collection && !activeItem && /* @__PURE__ */ jsx8("option", { value: "home", children: "Pick a record" }),
               recordPages.map((rp) => {
                 const state = itemsByPage[rp.key];
-                const options = !state || state.status === "loading" ? /* @__PURE__ */ jsxs6("option", { disabled: true, value: `${rp.key}::loading`, children: [
+                const options = !state || state.status === "loading" ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::loading`, children: [
                   "Loading ",
                   rp.title,
                   "..."
-                ] }) : state.status === "error" ? /* @__PURE__ */ jsxs6("option", { disabled: true, value: `${rp.key}::error`, children: [
+                ] }) : state.status === "error" ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::error`, children: [
                   rp.title,
                   ": could not load (",
                   state.message,
                   ")"
-                ] }) : state.items.length === 0 ? /* @__PURE__ */ jsxs6("option", { disabled: true, value: `${rp.key}::none`, children: [
+                ] }) : state.items.length === 0 ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::none`, children: [
                   rp.title,
                   ": no records yet"
-                ] }) : state.items.map((item) => /* @__PURE__ */ jsx7("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
-                return recordPages.length > 1 ? /* @__PURE__ */ jsx7("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx7(React7.Fragment, { children: options }, rp.key);
+                ] }) : state.items.map((item) => /* @__PURE__ */ jsx8("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
+                return recordPages.length > 1 ? /* @__PURE__ */ jsx8("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx8(React7.Fragment, { children: options }, rp.key);
               })
             ]
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
-        /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
+      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
+        /* @__PURE__ */ jsx8("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
           const conf = DEVICE_VIEWPORTS[mode];
           const Icon = conf.icon;
           const isCurrent = device === mode;
-          return /* @__PURE__ */ jsxs6(
+          return /* @__PURE__ */ jsxs7(
             "button",
             {
               type: "button",
@@ -2207,43 +2488,43 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isCurrent ? "bg-purple-900/80 text-purple-200 border border-purple-500/40 shadow-sm" : "text-slate-400 hover:text-white"}`,
               title: `${conf.label} (${conf.width}px)`,
               children: [
-                /* @__PURE__ */ jsx7(Icon, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsx7("span", { children: conf.label })
+                /* @__PURE__ */ jsx8(Icon, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ jsx8("span", { children: conf.label })
               ]
             },
             mode
           );
         }) }),
-        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 shrink-0", children: [
-          /* @__PURE__ */ jsx7(
+        /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 shrink-0", children: [
+          /* @__PURE__ */ jsx8(
             "button",
             {
               type: "button",
               onClick: toggleEditMode,
               className: `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border shrink-0 ${isEditModeActive ? "bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-900/30" : "bg-slate-950/70 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800/60"}`,
               title: isEditModeActive ? "Edit Mode is ON. Click to turn OFF and interact with webpage normally." : "Edit Mode is OFF. Click to turn ON and enable section edit buttons.",
-              children: isEditModeActive ? /* @__PURE__ */ jsxs6(Fragment3, { children: [
-                /* @__PURE__ */ jsx7("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
-                /* @__PURE__ */ jsx7(Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
-                /* @__PURE__ */ jsx7("span", { children: "Edit Mode" })
-              ] }) : /* @__PURE__ */ jsxs6(Fragment3, { children: [
-                /* @__PURE__ */ jsx7("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
-                /* @__PURE__ */ jsx7(Eye2, { className: "w-3 h-3 text-slate-400 shrink-0" }),
-                /* @__PURE__ */ jsx7("span", { children: "View Mode" })
+              children: isEditModeActive ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
+                /* @__PURE__ */ jsx8("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
+                /* @__PURE__ */ jsx8(Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
+                /* @__PURE__ */ jsx8("span", { children: "Edit Mode" })
+              ] }) : /* @__PURE__ */ jsxs7(Fragment4, { children: [
+                /* @__PURE__ */ jsx8("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
+                /* @__PURE__ */ jsx8(Eye2, { className: "w-3 h-3 text-slate-400 shrink-0" }),
+                /* @__PURE__ */ jsx8("span", { children: "View Mode" })
               ] })
             }
           ),
-          /* @__PURE__ */ jsx7(
+          /* @__PURE__ */ jsx8(
             "button",
             {
               type: "button",
               onClick: handleRefreshPreview,
               className: "p-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors",
               title: "Reload live canvas",
-              children: /* @__PURE__ */ jsx7(RotateCcw2, { className: "w-3.5 h-3.5" })
+              children: /* @__PURE__ */ jsx8(RotateCcw3, { className: "w-3.5 h-3.5" })
             }
           ),
-          /* @__PURE__ */ jsxs6(
+          /* @__PURE__ */ jsxs7(
             "a",
             {
               href: publicUrl(currentRoute, config.publicSiteUrl),
@@ -2252,18 +2533,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-medium transition-colors",
               title: "Open in new window",
               children: [
-                /* @__PURE__ */ jsx7(ExternalLink3, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsx7("span", { className: "hidden sm:inline", children: "Open Live" })
+                /* @__PURE__ */ jsx8(ExternalLink3, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ jsx8("span", { className: "hidden sm:inline", children: "Open Live" })
               ]
             }
           )
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
-      /* @__PURE__ */ jsxs6("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
-        /* @__PURE__ */ jsxs6("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
-          /* @__PURE__ */ jsxs6(
+    /* @__PURE__ */ jsxs7("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
+      /* @__PURE__ */ jsxs7("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
+        /* @__PURE__ */ jsxs7("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
+          /* @__PURE__ */ jsxs7(
             "button",
             {
               type: "button",
@@ -2272,19 +2553,19 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               "aria-controls": "cms-section-list",
               className: "w-full flex items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-slate-800/50 transition-colors",
               children: [
-                /* @__PURE__ */ jsxs6("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
-                  /* @__PURE__ */ jsx7("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
-                  !isSectionListOpen && activeSection && /* @__PURE__ */ jsxs6("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
-                    activeSection.icon && /* @__PURE__ */ jsx7(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
-                    /* @__PURE__ */ jsx7("span", { className: "truncate", children: activeSection.label })
+                /* @__PURE__ */ jsxs7("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
+                  /* @__PURE__ */ jsx8("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
+                  !isSectionListOpen && activeSection && /* @__PURE__ */ jsxs7("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
+                    activeSection.icon && /* @__PURE__ */ jsx8(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
+                    /* @__PURE__ */ jsx8("span", { className: "truncate", children: activeSection.label })
                   ] })
                 ] }),
-                /* @__PURE__ */ jsxs6("span", { className: "flex items-center gap-2 shrink-0", children: [
-                  /* @__PURE__ */ jsxs6("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
+                /* @__PURE__ */ jsxs7("span", { className: "flex items-center gap-2 shrink-0", children: [
+                  /* @__PURE__ */ jsxs7("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
                     "Page: ",
                     currentRoute
                   ] }),
-                  /* @__PURE__ */ jsx7(
+                  /* @__PURE__ */ jsx8(
                     ChevronDown2,
                     {
                       className: `w-4 h-4 text-purple-300 transition-transform ${isSectionListOpen ? "rotate-180" : ""}`
@@ -2294,26 +2575,26 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               ]
             }
           ),
-          isSectionListOpen && /* @__PURE__ */ jsxs6(Fragment3, { children: [
-            /* @__PURE__ */ jsx7("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
-              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs6(React7.Fragment, { children: [
-                index === 1 && /* @__PURE__ */ jsxs6("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
-                  /* @__PURE__ */ jsx7(Globe, { className: "w-3 h-3" }),
-                  /* @__PURE__ */ jsx7("span", { children: "Site-wide: shown on every page" })
+          isSectionListOpen && /* @__PURE__ */ jsxs7(Fragment4, { children: [
+            /* @__PURE__ */ jsx8("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs7(React7.Fragment, { children: [
+                index === 1 && /* @__PURE__ */ jsxs7("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
+                  /* @__PURE__ */ jsx8(Globe, { className: "w-3 h-3" }),
+                  /* @__PURE__ */ jsx8("span", { children: "Site-wide: shown on every page" })
                 ] }),
                 list.map((sec) => {
                   const isSelected = sec.key === activeSectionKey;
                   const IconComponent = sec.icon;
-                  return /* @__PURE__ */ jsxs6(
+                  return /* @__PURE__ */ jsxs7(
                     "button",
                     {
                       type: "button",
                       onClick: () => handleSelectSection(sec.key),
                       className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected ? "bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400" : "bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800"}`,
                       children: [
-                        IconComponent && /* @__PURE__ */ jsx7(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
-                        /* @__PURE__ */ jsx7("span", { children: sec.label }),
-                        isSelected && /* @__PURE__ */ jsx7(ChevronRight, { className: "w-3 h-3 text-purple-200" })
+                        IconComponent && /* @__PURE__ */ jsx8(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
+                        /* @__PURE__ */ jsx8("span", { children: sec.label }),
+                        isSelected && /* @__PURE__ */ jsx8(ChevronRight, { className: "w-3 h-3 text-purple-200" })
                       ]
                     },
                     sec.key
@@ -2321,16 +2602,16 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 })
               ] }, index)
             ) }),
-            /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
-              /* @__PURE__ */ jsx7(MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
-              /* @__PURE__ */ jsx7("span", { children: "Selecting a section scrolls the preview on the right to it." })
+            /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
+              /* @__PURE__ */ jsx8(MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
+              /* @__PURE__ */ jsx8("span", { children: "Selecting a section scrolls the preview on the right to it." })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsx7("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ jsxs6("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ jsx7(Loader22, { className: "w-6 h-6 animate-spin text-sky-400" }),
-          /* @__PURE__ */ jsx7("span", { children: "Loading record..." })
-        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ jsx7(
+        /* @__PURE__ */ jsx8("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ jsxs7("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ jsx8(Loader23, { className: "w-6 h-6 animate-spin text-sky-400" }),
+          /* @__PURE__ */ jsx8("span", { children: "Loading record..." })
+        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ jsx8(
           SectionEditorForm,
           {
             mode: "record",
@@ -2352,64 +2633,94 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             onReset: async () => void 0,
             onChangeDraft: handleRecordDraft
           }
-        ) : /* @__PURE__ */ jsx7("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ jsxs6("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ jsx7(Loader22, { className: "w-6 h-6 animate-spin text-purple-400" }),
-          /* @__PURE__ */ jsx7("span", { children: "Loading section form..." })
-        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ jsx7(
-          SectionEditorForm,
-          {
-            page: sectionPage,
-            sectionKey: activeSectionKey,
-            sectionLabel: activeSectionDef?.label,
-            pagePath: currentRoute,
-            transform: activeSectionDef?.transform,
-            focusPath: activeFieldPath,
-            onClearFocus: () => setActiveFieldPath(null),
-            onDirtyChange: (dirty) => {
-              hasUnsavedEdits.current = dirty;
+        ) : /* @__PURE__ */ jsx8("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ jsxs7("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ jsx8(Loader23, { className: "w-6 h-6 animate-spin text-purple-400" }),
+          /* @__PURE__ */ jsx8("span", { children: "Loading section form..." })
+        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
+          isStyleTarget && /* @__PURE__ */ jsx8("div", { role: "tablist", "aria-label": "Field editor", className: "flex items-center gap-1 p-1 mb-3 bg-slate-950/70 border border-slate-800 rounded-xl", children: ["content", "style"].map((tab) => /* @__PURE__ */ jsx8(
+            "button",
+            {
+              type: "button",
+              role: "tab",
+              "aria-selected": formTab === tab,
+              onClick: () => setFormTab(tab),
+              className: `flex-1 px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${formTab === tab ? "bg-purple-600 text-white" : "text-slate-400 hover:text-white"}`,
+              children: tab
             },
-            initialData: sectionDetail.content,
-            hasCustomOverride: sectionDetail.hasCustomOverride,
-            isPublished: sectionDetail.isPublished,
-            updatedAt: sectionDetail.updatedAt,
-            updatedBy: sectionDetail.updatedBy,
-            onSave: handleSaveSection,
-            onReset: handleResetSection,
-            onChangeDraft: handleDraftChange
-          }
-        ) : /* @__PURE__ */ jsx7("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
+            tab
+          )) }),
+          showStyleTab && /* @__PURE__ */ jsx8(
+            StylePanel,
+            {
+              value: fieldStyle,
+              device,
+              onDeviceChange: setDevice,
+              options: config.styles,
+              fonts: config.fonts,
+              isImage: isImageValue,
+              onChange: handleStyleChange,
+              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null),
+              onReset: () => writeFieldStyle(null),
+              isSaving: isSavingStyle,
+              hasSavedStyle: hasFieldStyle(savedFieldStyle)
+            }
+          ),
+          /* @__PURE__ */ jsx8("div", { hidden: showStyleTab, children: /* @__PURE__ */ jsx8(
+            SectionEditorForm,
+            {
+              page: sectionPage,
+              sectionKey: activeSectionKey,
+              sectionLabel: activeSectionDef?.label,
+              pagePath: currentRoute,
+              transform: activeSectionDef?.transform,
+              focusPath: activeFieldPath,
+              onClearFocus: () => setActiveFieldPath(null),
+              onDirtyChange: (dirty) => {
+                hasUnsavedEdits.current = dirty;
+              },
+              initialData: sectionDetail.content,
+              hasCustomOverride: sectionDetail.hasCustomOverride,
+              isPublished: sectionDetail.isPublished,
+              updatedAt: sectionDetail.updatedAt,
+              updatedBy: sectionDetail.updatedBy,
+              onSave: handleSaveSection,
+              onReset: handleResetSection,
+              onChangeDraft: handleDraftChange
+            }
+          ) })
+        ] }) : /* @__PURE__ */ jsx8("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
       ] }),
-      /* @__PURE__ */ jsxs6("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
-        /* @__PURE__ */ jsxs6("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
-          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 min-w-0", children: [
-            /* @__PURE__ */ jsx7(
+      /* @__PURE__ */ jsxs7("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
+        /* @__PURE__ */ jsxs7("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
+          /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 min-w-0", children: [
+            /* @__PURE__ */ jsx8(
               "span",
               {
                 className: `w-2 h-2 rounded-full shrink-0 ${isEditModeActive ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`
               }
             ),
-            /* @__PURE__ */ jsx7("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ jsxs6(Fragment3, { children: [
+            /* @__PURE__ */ jsx8("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
               "Live Interactive Canvas: ",
-              /* @__PURE__ */ jsx7("strong", { className: "text-white", children: currentSectionLabel }),
+              /* @__PURE__ */ jsx8("strong", { className: "text-white", children: currentSectionLabel }),
               " is active in editor."
-            ] }) : /* @__PURE__ */ jsxs6(Fragment3, { children: [
+            ] }) : /* @__PURE__ */ jsxs7(Fragment4, { children: [
               "Normal Webpage Mode: Interacting normally without edit buttons. Toggle ",
-              /* @__PURE__ */ jsx7("strong", { children: "Edit Mode ON" }),
+              /* @__PURE__ */ jsx8("strong", { children: "Edit Mode ON" }),
               " to edit."
             ] }) })
           ] }),
-          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
-            /* @__PURE__ */ jsx7(CheckCircle22, { className: "w-3.5 h-3.5" }),
-            /* @__PURE__ */ jsx7("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
+          /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
+            /* @__PURE__ */ jsx8(CheckCircle22, { className: "w-3.5 h-3.5" }),
+            /* @__PURE__ */ jsx8("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs6(
+        /* @__PURE__ */ jsxs7(
           "div",
           {
             ref: viewportContainerRef,
             className: "relative min-h-[750px] h-[calc(100vh-160px)] bg-slate-950 rounded-2xl border border-purple-500/20 shadow-2xl p-2 sm:p-4 flex flex-col items-center justify-start overflow-hidden",
             children: [
-              /* @__PURE__ */ jsx7(
+              /* @__PURE__ */ jsx8(
                 "div",
                 {
                   className: "absolute inset-0 pointer-events-none opacity-20",
@@ -2419,9 +2730,9 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                   }
                 }
               ),
-              isLoadingIframe && /* @__PURE__ */ jsxs6("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
-                /* @__PURE__ */ jsx7(Loader22, { className: "w-8 h-8 text-purple-400 animate-spin" }),
-                /* @__PURE__ */ jsx7("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
+              isLoadingIframe && /* @__PURE__ */ jsxs7("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
+                /* @__PURE__ */ jsx8(Loader23, { className: "w-8 h-8 text-purple-400 animate-spin" }),
+                /* @__PURE__ */ jsx8("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
               ] }),
               (() => {
                 const targetWidth = DEVICE_VIEWPORTS[device].width;
@@ -2429,12 +2740,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 const availH = Math.max(containerSize.height - 24, 400);
                 const scale = availW < targetWidth ? availW / targetWidth : 1;
                 const unscaledHeight = availH / scale;
-                return /* @__PURE__ */ jsx7(
+                return /* @__PURE__ */ jsx8(
                   "div",
                   {
                     className: "w-full h-full flex items-start justify-center overflow-hidden",
                     style: { width: `${availW}px`, height: `${availH}px` },
-                    children: /* @__PURE__ */ jsxs6(
+                    children: /* @__PURE__ */ jsxs7(
                       "div",
                       {
                         style: {
@@ -2445,8 +2756,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                         },
                         className: `shrink-0 transition-all duration-200 overflow-hidden shadow-2xl border ${device === "mobile" ? "border-slate-700 bg-slate-900 rounded-[38px] p-2 ring-8 ring-slate-800" : device === "tablet" ? "border-slate-700 bg-slate-900 rounded-[28px] p-2 ring-4 ring-slate-800" : "border-slate-800 bg-white rounded-xl"}`,
                         children: [
-                          device === "mobile" && /* @__PURE__ */ jsx7("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ jsx7("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
-                          isWaitingForRecord ? /* @__PURE__ */ jsx7("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ jsx7(
+                          device === "mobile" && /* @__PURE__ */ jsx8("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ jsx8("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
+                          isWaitingForRecord ? /* @__PURE__ */ jsx8("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ jsx8(
                             "iframe",
                             {
                               ref: iframeRef,
@@ -2472,7 +2783,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
 };
 
 // src/admin/CmsStudio.tsx
-import { jsx as jsx8, jsxs as jsxs7 } from "react/jsx-runtime";
+import { jsx as jsx9, jsxs as jsxs8 } from "react/jsx-runtime";
 function StudioContent({ config, initialPage, onPageChange }) {
   const firstPage = config.pages[0]?.key ?? "";
   const [activePage, setActivePage] = useState8(
@@ -2486,30 +2797,30 @@ function StudioContent({ config, initialPage, onPageChange }) {
     setActivePage(page);
     if (onPageChange) onPageChange(page);
   };
-  return /* @__PURE__ */ jsxs7("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
-    /* @__PURE__ */ jsxs7("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
-      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsx8("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ jsx8(Globe2, { className: "w-6 h-6" }) }),
-        /* @__PURE__ */ jsxs7("div", { children: [
-          /* @__PURE__ */ jsx8("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
-          /* @__PURE__ */ jsx8("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
+  return /* @__PURE__ */ jsxs8("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
+    /* @__PURE__ */ jsxs8("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
+      /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ jsx9("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ jsx9(Globe2, { className: "w-6 h-6" }) }),
+        /* @__PURE__ */ jsxs8("div", { children: [
+          /* @__PURE__ */ jsx9("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
+          /* @__PURE__ */ jsx9("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
         ] })
       ] }),
-      /* @__PURE__ */ jsx8("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs7(
+      /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs8(
         "button",
         {
           type: "button",
           onClick: () => setIsGlobalPreviewOpen(true),
           className: "flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition-all",
           children: [
-            /* @__PURE__ */ jsx8(Eye3, { className: "w-4 h-4" }),
-            /* @__PURE__ */ jsx8("span", { children: "Launch Live Preview" })
+            /* @__PURE__ */ jsx9(Eye3, { className: "w-4 h-4" }),
+            /* @__PURE__ */ jsx9("span", { children: "Launch Live Preview" })
           ]
         }
       ) })
     ] }),
-    /* @__PURE__ */ jsx8(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
-    /* @__PURE__ */ jsx8(
+    /* @__PURE__ */ jsx9(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
+    /* @__PURE__ */ jsx9(
       LivePreviewModal,
       {
         isOpen: isGlobalPreviewOpen,
@@ -2521,15 +2832,15 @@ function StudioContent({ config, initialPage, onPageChange }) {
 }
 var CmsStudio = (props) => {
   const { config, toaster = true } = props;
-  return /* @__PURE__ */ jsxs7(StudioProvider, { config, children: [
-    /* @__PURE__ */ jsx8("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ jsx8(StudioContent, { ...props }) }),
-    toaster && /* @__PURE__ */ jsx8(Toaster, { position: "top-right" })
+  return /* @__PURE__ */ jsxs8(StudioProvider, { config, children: [
+    /* @__PURE__ */ jsx9("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ jsx9(StudioContent, { ...props }) }),
+    toaster && /* @__PURE__ */ jsx9(Toaster, { position: "top-right" })
   ] });
 };
 
 // src/admin/CmsNavButton.tsx
 import { Globe as Globe3 } from "lucide-react";
-import { jsx as jsx9, jsxs as jsxs8 } from "react/jsx-runtime";
+import { jsx as jsx10, jsxs as jsxs9 } from "react/jsx-runtime";
 var CmsNavButton = ({
   href,
   active = false,
@@ -2537,7 +2848,7 @@ var CmsNavButton = ({
   as: Component = "a",
   className,
   ...rest
-}) => /* @__PURE__ */ jsxs8(
+}) => /* @__PURE__ */ jsxs9(
   Component,
   {
     href,
@@ -2545,16 +2856,16 @@ var CmsNavButton = ({
     className: className ?? `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800/80"}`,
     ...rest,
     children: [
-      /* @__PURE__ */ jsx9(Globe3, { className: "w-5 h-5" }),
-      /* @__PURE__ */ jsx9("span", { children: label })
+      /* @__PURE__ */ jsx10(Globe3, { className: "w-5 h-5" }),
+      /* @__PURE__ */ jsx10("span", { children: label })
     ]
   }
 );
 
 // src/admin/CmsAuth.tsx
 import { useCallback as useCallback2, useEffect as useEffect8, useState as useState9 } from "react";
-import { Loader2 as Loader23, Lock as Lock2, LogOut } from "lucide-react";
-import { Fragment as Fragment4, jsx as jsx10, jsxs as jsxs9 } from "react/jsx-runtime";
+import { Loader2 as Loader24, Lock as Lock2, LogOut } from "lucide-react";
+import { Fragment as Fragment5, jsx as jsx11, jsxs as jsxs10 } from "react/jsx-runtime";
 function safeNext(value) {
   return value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : null;
 }
@@ -2579,29 +2890,29 @@ var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirect
     }
   };
   const field = "w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30";
-  return /* @__PURE__ */ jsx10("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ jsxs9("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
-    /* @__PURE__ */ jsxs9("div", { className: "flex flex-col items-center gap-3 text-center", children: [
-      /* @__PURE__ */ jsx10("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ jsx10(Lock2, { className: "h-6 w-6" }) }),
-      /* @__PURE__ */ jsx10("h1", { className: "text-xl font-bold", children: title }),
-      /* @__PURE__ */ jsx10("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
+  return /* @__PURE__ */ jsx11("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ jsxs10("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
+    /* @__PURE__ */ jsxs10("div", { className: "flex flex-col items-center gap-3 text-center", children: [
+      /* @__PURE__ */ jsx11("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ jsx11(Lock2, { className: "h-6 w-6" }) }),
+      /* @__PURE__ */ jsx11("h1", { className: "text-xl font-bold", children: title }),
+      /* @__PURE__ */ jsx11("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
     ] }),
-    /* @__PURE__ */ jsxs9("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ jsxs10("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Username",
-      /* @__PURE__ */ jsx10("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
+      /* @__PURE__ */ jsx11("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
     ] }),
-    /* @__PURE__ */ jsxs9("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ jsxs10("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Password",
-      /* @__PURE__ */ jsx10("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
+      /* @__PURE__ */ jsx11("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
     ] }),
-    error && /* @__PURE__ */ jsx10("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
-    /* @__PURE__ */ jsxs9(
+    error && /* @__PURE__ */ jsx11("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
+    /* @__PURE__ */ jsxs10(
       "button",
       {
         type: "submit",
         disabled: busy,
         className: "flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-purple-500 disabled:opacity-60",
         children: [
-          busy && /* @__PURE__ */ jsx10(Loader23, { className: "h-4 w-4 animate-spin" }),
+          busy && /* @__PURE__ */ jsx11(Loader24, { className: "h-4 w-4 animate-spin" }),
           busy ? "Signing in..." : "Sign in"
         ]
       }
@@ -2634,17 +2945,17 @@ var CmsAuthGate = ({ auth, loginPath, title, children }) => {
   useEffect8(() => {
     void verify();
   }, [verify]);
-  if (state === "in" || state === "login-page") return /* @__PURE__ */ jsx10(Fragment4, { children });
-  if (state === "out") return /* @__PURE__ */ jsx10(CmsLogin, { auth, title, onSuccess: () => void verify() });
+  if (state === "in" || state === "login-page") return /* @__PURE__ */ jsx11(Fragment5, { children });
+  if (state === "out") return /* @__PURE__ */ jsx11(CmsLogin, { auth, title, onSuccess: () => void verify() });
   if (state === "error") {
-    return /* @__PURE__ */ jsxs9("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
-      /* @__PURE__ */ jsx10("p", { className: "text-sm text-slate-300", children: message }),
-      /* @__PURE__ */ jsx10("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
+    return /* @__PURE__ */ jsxs10("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
+      /* @__PURE__ */ jsx11("p", { className: "text-sm text-slate-300", children: message }),
+      /* @__PURE__ */ jsx11("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
     ] });
   }
-  return /* @__PURE__ */ jsx10("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ jsx10(Loader23, { className: "h-6 w-6 animate-spin" }) });
+  return /* @__PURE__ */ jsx11("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ jsx11(Loader24, { className: "h-6 w-6 animate-spin" }) });
 };
-var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ jsx10(
+var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ jsx11(
   "button",
   {
     type: "button",
@@ -2653,8 +2964,8 @@ var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @_
       auth.logout();
       window.location.assign(redirectTo);
     },
-    children: children ?? /* @__PURE__ */ jsxs9(Fragment4, { children: [
-      /* @__PURE__ */ jsx10(LogOut, { className: "h-3.5 w-3.5" }),
+    children: children ?? /* @__PURE__ */ jsxs10(Fragment5, { children: [
+      /* @__PURE__ */ jsx11(LogOut, { className: "h-3.5 w-3.5" }),
       " Sign out"
     ] })
   }

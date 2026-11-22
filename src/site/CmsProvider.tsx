@@ -4,6 +4,7 @@ import { findGlobalPage, findPage } from '../core/defineCms';
 import { mergePageContent } from '../core/merge';
 import { CMS_MESSAGE, listenForCmsMessages, trustedOrigins } from '../core/messages';
 import { isCmsPreview } from './preview';
+import { createFieldStyleStore, type FieldStyleStore } from './fieldStyles';
 
 interface CmsContextValue {
   config: CmsConfig;
@@ -11,6 +12,8 @@ interface CmsContextValue {
   initialContent: Record<string, Record<string, unknown>>;
   /** Origins allowed to send preview messages to this page. */
   origins: string[];
+  /** Field styles (Style tab), published and unsaved. */
+  styles: FieldStyleStore;
 }
 
 const CmsContext = createContext<CmsContextValue | null>(null);
@@ -34,9 +37,14 @@ export const CmsProvider: React.FC<CmsProviderProps> = ({ config, initialContent
     setOrigins(trustedOrigins(config.allowedOrigins ?? []));
   }, [config.allowedOrigins]);
 
+  // One store per provider; it reads the "_styles" record of each page from initialContent.
+  const styles = useMemo(() => createFieldStyleStore(config.adapter, initialContent ?? {}), [config.adapter, initialContent]);
+  const originsKey = origins.join('|');
+  useEffect(() => styles.connect(origins), [styles, originsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const value = useMemo<CmsContextValue>(
-    () => ({ config, initialContent: initialContent ?? {}, origins }),
-    [config, initialContent, origins]
+    () => ({ config, initialContent: initialContent ?? {}, origins, styles }),
+    [config, initialContent, origins, styles]
   );
 
   return <CmsContext.Provider value={value}>{children}</CmsContext.Provider>;

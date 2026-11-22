@@ -475,7 +475,9 @@ var CMS_MESSAGE = {
   /** studio -> iframe: content was saved or reset, fetch it again. */
   CONTENT_UPDATED: "CMS_CONTENT_UPDATED",
   /** studio -> iframe: unsaved values of a collection record, to render immediately. */
-  ITEM_DRAFT: "CMS_ITEM_DRAFT"
+  ITEM_DRAFT: "CMS_ITEM_DRAFT",
+  /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+  STYLE_DRAFT: "CMS_STYLE_DRAFT"
 };
 var PREVIEW_PARAM = "cms_preview";
 var EDIT_MODE_PARAM = "cms_edit_mode";

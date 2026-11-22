@@ -153,6 +153,24 @@ interface CmsWidgets {
      */
     code?: ComponentType<CodeWidgetProps>;
 }
+/** Presets and settings of the Style tab. Values can be CSS variables, e.g. "var(--color-brand-600)". */
+interface CmsStyleOptions {
+    /** False hides the Style tab. Default: true. */
+    enabled?: boolean;
+    /** Colour presets by name, e.g. { Brand: 'var(--color-brand-600)' }. */
+    colors?: Record<string, string>;
+    /** Font size presets, e.g. { S: '1rem', M: '1.5rem', L: '2.5rem' }. */
+    fontSizes?: Record<string, string>;
+    /** Spacing presets for margin and padding, e.g. { None: '0', Small: '0.5rem' }. */
+    spacing?: Record<string, string>;
+    /** Corner radius presets, e.g. { None: '0', Round: '9999px' }. */
+    radii?: Record<string, string>;
+    /** Widths (px) below which the tablet and phone values apply. Default: 1024 and 768. */
+    breakpoints?: {
+        tablet?: number;
+        phone?: number;
+    };
+}
 interface CmsConfig {
     /** Pages the studio lists and the site can read. */
     pages: PageDef[];
@@ -179,6 +197,11 @@ interface CmsConfig {
      * "font" (e.g. "headingFont") then offers exactly these in a list.
      */
     fonts?: string[];
+    /**
+     * The Style tab of a single field: presets offered next to the custom inputs, and breakpoints.
+     * Styles are saved per page as the record "_styles", through the same storage adapter.
+     */
+    styles?: CmsStyleOptions;
     /**
      * Item limits for array fields. Keys are tried in this order:
      * "page.section.path", "page.path", "section.path", "page.section".

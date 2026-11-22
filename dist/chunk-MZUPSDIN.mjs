@@ -29,6 +29,9 @@ function defineCms(config) {
     }
     const sectionKeys = /* @__PURE__ */ new Set();
     for (const section of page.sections) {
+      if (section.key === "_styles") {
+        throw new Error(`[storio-editor] Section key "_styles" on page "${page.key}" is reserved for field styles. Rename the section.`);
+      }
       if (!isValidKey(section.key)) {
         throw new Error(`[storio-editor] Invalid section key "${section.key}" on page "${page.key}".`);
       }
@@ -158,7 +161,9 @@ var CMS_MESSAGE = {
   /** studio -> iframe: content was saved or reset, fetch it again. */
   CONTENT_UPDATED: "CMS_CONTENT_UPDATED",
   /** studio -> iframe: unsaved values of a collection record, to render immediately. */
-  ITEM_DRAFT: "CMS_ITEM_DRAFT"
+  ITEM_DRAFT: "CMS_ITEM_DRAFT",
+  /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+  STYLE_DRAFT: "CMS_STYLE_DRAFT"
 };
 var PREVIEW_PARAM = "cms_preview";
 var EDIT_MODE_PARAM = "cms_edit_mode";

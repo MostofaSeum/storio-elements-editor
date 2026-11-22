@@ -5,7 +5,7 @@ import {
   findPage,
   isValidKey,
   mergePageContent
-} from "./chunk-HPASKW7Y.mjs";
+} from "./chunk-MZUPSDIN.mjs";
 
 // src/next/createCmsRouteHandler.ts
 function json(body, status = 200) {

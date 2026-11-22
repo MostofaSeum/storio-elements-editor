@@ -1,8 +1,10 @@
 "use client";
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -16,6 +18,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/site/index.ts
@@ -36,7 +46,7 @@ __export(site_exports, {
 module.exports = __toCommonJS(site_exports);
 
 // src/site/CmsProvider.tsx
-var import_react2 = require("react");
+var import_react3 = require("react");
 
 // src/core/defineCms.ts
 function findGlobalPage(config) {
@@ -76,7 +86,9 @@ var CMS_MESSAGE = {
   /** studio -> iframe: content was saved or reset, fetch it again. */
   CONTENT_UPDATED: "CMS_CONTENT_UPDATED",
   /** studio -> iframe: unsaved values of a collection record, to render immediately. */
-  ITEM_DRAFT: "CMS_ITEM_DRAFT"
+  ITEM_DRAFT: "CMS_ITEM_DRAFT",
+  /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+  STYLE_DRAFT: "CMS_STYLE_DRAFT"
 };
 var PREVIEW_PARAM = "cms_preview";
 var EDIT_MODE_PARAM = "cms_edit_mode";
@@ -151,22 +163,200 @@ function useCmsEditMode(origins) {
   return isEditMode;
 }
 
+// src/site/fieldStyles.ts
+var import_react2 = require("react");
+
+// src/core/styles.ts
+var STYLES_KEY = "_styles";
+var DEFAULT_BREAKPOINTS = { tablet: 1024, phone: 768 };
+var CSS_NAMES = {
+  color: "color",
+  fontSize: "font-size",
+  fontWeight: "font-weight",
+  lineHeight: "line-height",
+  letterSpacing: "letter-spacing",
+  textAlign: "text-align",
+  fontFamily: "font-family",
+  marginTop: "margin-top",
+  marginRight: "margin-right",
+  marginBottom: "margin-bottom",
+  marginLeft: "margin-left",
+  paddingTop: "padding-top",
+  paddingRight: "padding-right",
+  paddingBottom: "padding-bottom",
+  paddingLeft: "padding-left",
+  width: "width",
+  maxWidth: "max-width",
+  height: "height",
+  backgroundColor: "background-color",
+  borderRadius: "border-radius",
+  borderWidth: "border-width",
+  borderColor: "border-color",
+  objectFit: "object-fit",
+  opacity: "opacity"
+};
+var STYLE_PROPERTIES = Object.keys(CSS_NAMES);
+var BOX_PROPERTIES = [
+  "width",
+  "maxWidth",
+  "height",
+  "marginTop",
+  "marginBottom",
+  "paddingTop",
+  "paddingBottom",
+  "backgroundColor",
+  "borderRadius",
+  "borderWidth"
+];
+var UNSAFE = /[;{}<>\\\r\n]/;
+function styleId(page, section, path) {
+  return `${page}:${section}:${path}`;
+}
+function sanitizeStyleProps(props) {
+  const out = {};
+  if (!props || typeof props !== "object") return out;
+  for (const [key, value] of Object.entries(props)) {
+    if (!(key in CSS_NAMES)) continue;
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    const text = String(value).trim();
+    if (!text || UNSAFE.test(text)) continue;
+    out[key] = text;
+  }
+  return out;
+}
+function hasFieldStyle(style) {
+  if (!style) return false;
+  return ["desktop", "tablet", "phone"].some((d) => Object.keys(sanitizeStyleProps(style[d])).length > 0);
+}
+function declarations(props, wrapper) {
+  let css = "";
+  for (const key of STYLE_PROPERTIES) {
+    const value = props[key];
+    if (value === void 0) continue;
+    css += `${CSS_NAMES[key]}:${value};`;
+    if (key === "borderWidth") css += "border-style:solid;";
+  }
+  if (wrapper && BOX_PROPERTIES.some((key) => props[key] !== void 0)) css += "display:inline-block;";
+  return css;
+}
+function fieldStyleToCss(id, style, options = {}) {
+  if (!style) return "";
+  const attr = `[data-cms-style="${id.replace(/["\\]/g, "\\$&")}"]`;
+  const selector = attr + attr;
+  const wrapper = options.wrapper ?? false;
+  const tablet = options.breakpoints?.tablet ?? DEFAULT_BREAKPOINTS.tablet;
+  const phone = options.breakpoints?.phone ?? DEFAULT_BREAKPOINTS.phone;
+  let css = "";
+  const desktop = declarations(sanitizeStyleProps(style.desktop), wrapper);
+  if (desktop) css += `${selector}{${desktop}}`;
+  for (const [device, width] of [["tablet", tablet], ["phone", phone]]) {
+    const body = declarations(sanitizeStyleProps(style[device]), wrapper);
+    if (body) css += `@media (max-width:${width - 0.02}px){${selector}{${body}}}`;
+  }
+  return css;
+}
+function routeMatches(route, pathname) {
+  const clean = (p) => p.length > 1 ? p.replace(/\/+$/, "") : p;
+  const pattern = clean(route).split("/").map((part) => /^\[[^\]]+\]$/.test(part) ? "[^/]+" : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("/");
+  return new RegExp(`^${pattern}$`).test(clean(pathname));
+}
+function resolveFieldPage(config, section, explicitPage, pathname) {
+  if (explicitPage) return explicitPage;
+  const owners = config.pages.filter((p) => p.sections.some((s) => s.key === section));
+  if (owners.length === 1) return owners[0].key;
+  if (owners.length === 0 || !pathname) return void 0;
+  const matching = owners.filter((p) => !p.global && routeMatches(p.route, pathname));
+  return matching.length === 1 ? matching[0].key : void 0;
+}
+
+// src/site/fieldStyles.ts
+var draftKey = (page, section, path) => `${page}\0${section}\0${path}`;
+function createFieldStyleStore(adapter, initialContent) {
+  const sheets = /* @__PURE__ */ new Map();
+  const requested = /* @__PURE__ */ new Set();
+  const drafts2 = /* @__PURE__ */ new Map();
+  const listeners2 = /* @__PURE__ */ new Set();
+  let version = 0;
+  for (const [page, content] of Object.entries(initialContent)) {
+    const sheet = content?.[STYLES_KEY];
+    if (sheet && typeof sheet === "object") sheets.set(page, sheet);
+  }
+  const notify2 = () => {
+    version += 1;
+    listeners2.forEach((listener) => listener());
+  };
+  const load = async (page) => {
+    try {
+      const record = await adapter.getRecord(page, STYLES_KEY, { includeDrafts: isCmsPreview() });
+      const content = record?.content;
+      sheets.set(page, content && typeof content === "object" ? content : {});
+      notify2();
+    } catch {
+    }
+  };
+  return {
+    get(page, section, path) {
+      const key = draftKey(page, section, path);
+      if (drafts2.has(key)) return drafts2.get(key) ?? void 0;
+      return sheets.get(page)?.[section]?.[path];
+    },
+    request(page) {
+      if (requested.has(page)) return;
+      requested.add(page);
+      if (Object.prototype.hasOwnProperty.call(initialContent, page)) return;
+      void load(page);
+    },
+    subscribe(listener) {
+      listeners2.add(listener);
+      return () => listeners2.delete(listener);
+    },
+    version: () => version,
+    connect(origins) {
+      if (typeof window === "undefined" || window.parent === window || origins.length === 0) return () => void 0;
+      return listenForCmsMessages(
+        (message) => {
+          if (message.type === CMS_MESSAGE.STYLE_DRAFT) {
+            drafts2.set(draftKey(message.page, message.sectionKey, message.path), message.style);
+            notify2();
+          } else if (message.type === CMS_MESSAGE.CONTENT_UPDATED) {
+            drafts2.clear();
+            const pages = /* @__PURE__ */ new Set([...requested, ...sheets.keys()]);
+            if (pages.size === 0) notify2();
+            pages.forEach((page) => void load(page));
+          }
+        },
+        { origins, source: () => window.parent }
+      );
+    }
+  };
+}
+function useStoredFieldStyle(store, page, section, path) {
+  (0, import_react2.useEffect)(() => {
+    if (page) store.request(page);
+  }, [store, page]);
+  (0, import_react2.useSyncExternalStore)(store.subscribe, store.version, store.version);
+  return page ? store.get(page, section, path) : void 0;
+}
+
 // src/site/CmsProvider.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
-var CmsContext = (0, import_react2.createContext)(null);
+var CmsContext = (0, import_react3.createContext)(null);
 var CmsProvider = ({ config, initialContent, children }) => {
-  const [origins, setOrigins] = (0, import_react2.useState)([]);
-  (0, import_react2.useEffect)(() => {
+  const [origins, setOrigins] = (0, import_react3.useState)([]);
+  (0, import_react3.useEffect)(() => {
     setOrigins(trustedOrigins(config.allowedOrigins ?? []));
   }, [config.allowedOrigins]);
-  const value = (0, import_react2.useMemo)(
-    () => ({ config, initialContent: initialContent ?? {}, origins }),
-    [config, initialContent, origins]
+  const styles = (0, import_react3.useMemo)(() => createFieldStyleStore(config.adapter, initialContent ?? {}), [config.adapter, initialContent]);
+  const originsKey = origins.join("|");
+  (0, import_react3.useEffect)(() => styles.connect(origins), [styles, originsKey]);
+  const value = (0, import_react3.useMemo)(
+    () => ({ config, initialContent: initialContent ?? {}, origins, styles }),
+    [config, initialContent, origins, styles]
   );
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CmsContext.Provider, { value, children });
 };
 function useCmsContext() {
-  const ctx = (0, import_react2.useContext)(CmsContext);
+  const ctx = (0, import_react3.useContext)(CmsContext);
   if (!ctx) {
     throw new Error("[storio-editor] Wrap your site in <CmsProvider config={...}> before using CMS hooks.");
   }
@@ -181,11 +371,11 @@ function usePageContent(pageKey, options = {}) {
   if (!page) {
     throw new Error(`[storio-editor] Unknown page "${pageKey}". Add it to the "pages" array of your CMS config.`);
   }
-  const [content, setContent] = (0, import_react2.useState)(
+  const [content, setContent] = (0, import_react3.useState)(
     () => options.initialData ?? initialContent[pageKey] ?? mergePageContent(page, [])
   );
   const originsKey = origins.join("|");
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     let isMounted = true;
     const includeDrafts = isCmsPreview();
     const fetchPage = async () => {
@@ -268,13 +458,13 @@ var CmsThemeStyle = ({ section = "theme", prefix, selector }) => {
 };
 
 // src/site/CmsSection.tsx
-var import_react4 = require("react");
+var import_react5 = require("react");
 var import_react_dom = require("react-dom");
 var import_lucide_react = require("lucide-react");
 
 // src/site/sectionContext.ts
-var import_react3 = require("react");
-var CmsSectionContext = (0, import_react3.createContext)(null);
+var import_react4 = require("react");
+var CmsSectionContext = (0, import_react4.createContext)(null);
 var EDIT_BUTTON_Z_INDEX = 2147483e3;
 var activeField = null;
 var fieldHoverListeners = /* @__PURE__ */ new Set();
@@ -323,26 +513,26 @@ var CmsSection = ({
 }) => {
   const { origins } = useCmsContext();
   const isEditMode = useCmsEditMode(origins);
-  const [pathname, setPathname] = (0, import_react4.useState)(null);
-  const [isTargeted, setIsTargeted] = (0, import_react4.useState)(false);
-  const [isHovered, setIsHovered] = (0, import_react4.useState)(false);
-  const [buttonPosition, setButtonPosition] = (0, import_react4.useState)(null);
-  const sectionRef = (0, import_react4.useRef)(null);
-  const buttonRef = (0, import_react4.useRef)(null);
+  const [pathname, setPathname] = (0, import_react5.useState)(null);
+  const [isTargeted, setIsTargeted] = (0, import_react5.useState)(false);
+  const [isHovered, setIsHovered] = (0, import_react5.useState)(false);
+  const [buttonPosition, setButtonPosition] = (0, import_react5.useState)(null);
+  const sectionRef = (0, import_react5.useRef)(null);
+  const buttonRef = (0, import_react5.useRef)(null);
   const originsKey = origins.join("|");
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     setPathname(window.location.pathname);
   }, []);
-  const isFieldActive = (0, import_react4.useSyncExternalStore)(subscribeToFieldHover, isFieldHoverActive, () => false);
+  const isFieldActive = (0, import_react5.useSyncExternalStore)(subscribeToFieldHover, isFieldHoverActive, () => false);
   const isSectionHovered = isHovered && !isFieldActive;
   const isValidPath = !activeOnPath || pathname === activeOnPath;
   const showButton = isEditMode && isValidPath && (isSectionHovered || isTargeted);
-  const sectionContext = (0, import_react4.useMemo)(
+  const sectionContext = (0, import_react5.useMemo)(
     () => ({ sectionKey, page, isEditMode: isEditMode && isValidPath, origins }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sectionKey, page, isEditMode, isValidPath, originsKey]
   );
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (!isEditMode) return;
     let timer;
     const unsubscribe = listenForCmsMessages(
@@ -366,7 +556,7 @@ var CmsSection = ({
       unsubscribe();
     };
   }, [isEditMode, sectionKey, originsKey]);
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (!showButton) {
       setButtonPosition(null);
       return;
@@ -458,7 +648,7 @@ var CmsSection = ({
 };
 
 // src/site/CmsField.tsx
-var import_react6 = require("react");
+var import_react7 = __toESM(require("react"));
 var import_react_dom2 = require("react-dom");
 var import_lucide_react2 = require("lucide-react");
 
@@ -478,7 +668,7 @@ function getAtPath(data, path) {
 }
 
 // src/site/itemDrafts.ts
-var import_react5 = require("react");
+var import_react6 = require("react");
 var drafts = /* @__PURE__ */ new Map();
 var listeners = /* @__PURE__ */ new Set();
 var stopListening = null;
@@ -496,9 +686,9 @@ function ensureListening(origins) {
   stopListening = listenForCmsMessages(
     (message) => {
       if (message.type !== CMS_MESSAGE.ITEM_DRAFT) return;
-      const draftKey = keyOf(message.collection, String(message.item));
-      if (message.values) drafts.set(draftKey, message.values);
-      else drafts.delete(draftKey);
+      const draftKey2 = keyOf(message.collection, String(message.item));
+      if (message.values) drafts.set(draftKey2, message.values);
+      else drafts.delete(draftKey2);
       notify();
     },
     { origins, source: () => window.parent }
@@ -513,10 +703,10 @@ function subscribe(listener) {
 function useItemDraft(collection, item) {
   const { origins } = useCmsContext();
   const originsKey = origins.join("|");
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     ensureListening(origins);
   }, [originsKey]);
-  return (0, import_react5.useSyncExternalStore)(
+  return (0, import_react6.useSyncExternalStore)(
     subscribe,
     () => drafts.get(keyOf(collection, item)),
     () => void 0
@@ -538,13 +728,13 @@ function labelFromPath(path) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
-  const wrapperRef = (0, import_react6.useRef)(null);
-  const pencilRef = (0, import_react6.useRef)(null);
-  const [isHovered, setIsHovered] = (0, import_react6.useState)(false);
-  const [box, setBox] = (0, import_react6.useState)(null);
+  const wrapperRef = (0, import_react7.useRef)(null);
+  const pencilRef = (0, import_react7.useRef)(null);
+  const [isHovered, setIsHovered] = (0, import_react7.useState)(false);
+  const [box, setBox] = (0, import_react7.useState)(null);
   const showControls = isEditMode && isHovered;
-  const hideTimer = (0, import_react6.useRef)(void 0);
-  const hideNow = (0, import_react6.useCallback)(() => {
+  const hideTimer = (0, import_react7.useRef)(void 0);
+  const hideNow = (0, import_react7.useCallback)(() => {
     clearTimeout(hideTimer.current);
     setIsHovered(false);
     releaseFieldHover(hideNow);
@@ -558,14 +748,14 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(hideNow, HIDE_DELAY_MS);
   };
-  (0, import_react6.useEffect)(
+  (0, import_react7.useEffect)(
     () => () => {
       clearTimeout(hideTimer.current);
       releaseFieldHover(hideNow);
     },
     [hideNow]
   );
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     if (!showControls) {
       setBox(null);
       return;
@@ -671,10 +861,45 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
     }
   );
 };
+function useFieldPage(section, explicitPage, isEditMode) {
+  const { config } = useCmsContext();
+  const direct = resolveFieldPage(config, section, explicitPage);
+  const [pathname, setPathname] = (0, import_react7.useState)(void 0);
+  (0, import_react7.useEffect)(() => {
+    if (!direct) setPathname(window.location.pathname);
+  }, [direct]);
+  const page = direct ?? resolveFieldPage(config, section, void 0, pathname);
+  (0, import_react7.useEffect)(() => {
+    if (isEditMode && !direct && pathname !== void 0 && config.pages.filter((p) => p.sections.some((s) => s.key === section)).length > 1) {
+      console.info(`[storio-editor] Section "${section}" is on several pages. Add page="<page key>" to its <CmsSection> so field styles render on the server.`);
+    }
+  }, [isEditMode, direct, pathname, section, config.pages]);
+  return page;
+}
+var StyledField = ({
+  page,
+  section,
+  path,
+  children
+}) => {
+  const { styles, config } = useCmsContext();
+  const style = useStoredFieldStyle(styles, page, section, path);
+  if (!page || !hasFieldStyle(style)) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children });
+  const id = styleId(page, section, path);
+  const items = import_react7.default.Children.toArray(children);
+  const only = items.length === 1 ? items[0] : null;
+  const canMark = import_react7.default.isValidElement(only) && typeof only.type === "string";
+  const marked = canMark ? import_react7.default.cloneElement(only, { "data-cms-style": id }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { "data-cms-style": id, children });
+  const css = fieldStyleToCss(id, style, { breakpoints: config.styles?.breakpoints, wrapper: !canMark });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+    css && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("style", { "data-cms-style-for": id, dangerouslySetInnerHTML: { __html: css } }),
+    marked
+  ] });
+};
 var SectionField = ({ path, label, section: sectionProp, page, children }) => {
-  const surrounding = (0, import_react6.useContext)(CmsSectionContext);
+  const surrounding = (0, import_react7.useContext)(CmsSectionContext);
   const name = label ?? labelFromPath(path);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     if (!surrounding && !sectionProp && new URLSearchParams(window.location.search).has(EDIT_MODE_PARAM)) {
       console.warn(`[storio-editor] <CmsField path="${path}"> must be placed inside a <CmsSection>, or given collection and item.`);
     }
@@ -684,24 +909,28 @@ var SectionField = ({ path, label, section: sectionProp, page, children }) => {
   }
   if (!surrounding) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children });
   const targetPage = page ?? surrounding.page;
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SurroundedField, { path, name, sectionKey: surrounding.sectionKey, page: targetPage, isEditMode: surrounding.isEditMode, origins: surrounding.origins, children });
+};
+var SurroundedField = ({ path, name, sectionKey, page: targetPage, isEditMode, origins, children }) => {
+  const stylePage = useFieldPage(sectionKey, targetPage, isEditMode);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
     FieldFrame,
     {
       path,
       name,
-      isEditMode: surrounding.isEditMode,
+      isEditMode,
       onOpen: () => postCmsMessage(
         window.parent,
         {
           type: CMS_MESSAGE.EDIT_SECTION,
-          sectionKey: surrounding.sectionKey,
+          sectionKey,
           ...targetPage ? { page: targetPage } : {},
           title: name,
           fieldPath: path
         },
-        surrounding.origins
+        origins
       ),
-      children
+      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(StyledField, { page: stylePage, section: sectionKey, path, children })
     }
   );
 };
@@ -714,6 +943,7 @@ var OtherSectionField = ({
 }) => {
   const { origins } = useCmsContext();
   const isEditMode = useCmsEditMode(origins);
+  const stylePage = useFieldPage(sectionKey, page, isEditMode);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
     FieldFrame,
     {
@@ -725,7 +955,7 @@ var OtherSectionField = ({
         { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...page ? { page } : {}, title: name, fieldPath: path },
         origins
       ),
-      children
+      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(StyledField, { page: stylePage, section: sectionKey, path, children })
     }
   );
 };

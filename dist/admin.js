@@ -45,7 +45,7 @@ module.exports = __toCommonJS(admin_exports);
 // src/admin/CmsStudio.tsx
 var import_react8 = require("react");
 var import_react_hot_toast5 = require("react-hot-toast");
-var import_lucide_react7 = require("lucide-react");
+var import_lucide_react8 = require("lucide-react");
 
 // src/core/defineCms.ts
 function findGlobalPage(config) {
@@ -78,7 +78,9 @@ var CMS_MESSAGE = {
   /** studio -> iframe: content was saved or reset, fetch it again. */
   CONTENT_UPDATED: "CMS_CONTENT_UPDATED",
   /** studio -> iframe: unsaved values of a collection record, to render immediately. */
-  ITEM_DRAFT: "CMS_ITEM_DRAFT"
+  ITEM_DRAFT: "CMS_ITEM_DRAFT",
+  /** studio -> iframe: unsaved style of one field (null clears it), to render immediately. */
+  STYLE_DRAFT: "CMS_STYLE_DRAFT"
 };
 var PREVIEW_PARAM = "cms_preview";
 var EDIT_MODE_PARAM = "cms_edit_mode";
@@ -150,7 +152,7 @@ function useStudio() {
 
 // src/admin/CanvasEditor.tsx
 var import_react7 = __toESM(require("react"));
-var import_lucide_react6 = require("lucide-react");
+var import_lucide_react7 = require("lucide-react");
 var import_react_hot_toast4 = __toESM(require("react-hot-toast"));
 
 // src/core/collections.ts
@@ -217,6 +219,64 @@ function buildPreviewUrl(route, options = {}) {
   if (options.editMode) params.push(`${EDIT_MODE_PARAM}=1`);
   if (options.cacheBust !== void 0) params.push(`t=${encodeURIComponent(String(options.cacheBust))}`);
   return `${base}${base.includes("?") ? "&" : "?"}${params.join("&")}`;
+}
+
+// src/core/styles.ts
+var STYLES_KEY = "_styles";
+var CSS_NAMES = {
+  color: "color",
+  fontSize: "font-size",
+  fontWeight: "font-weight",
+  lineHeight: "line-height",
+  letterSpacing: "letter-spacing",
+  textAlign: "text-align",
+  fontFamily: "font-family",
+  marginTop: "margin-top",
+  marginRight: "margin-right",
+  marginBottom: "margin-bottom",
+  marginLeft: "margin-left",
+  paddingTop: "padding-top",
+  paddingRight: "padding-right",
+  paddingBottom: "padding-bottom",
+  paddingLeft: "padding-left",
+  width: "width",
+  maxWidth: "max-width",
+  height: "height",
+  backgroundColor: "background-color",
+  borderRadius: "border-radius",
+  borderWidth: "border-width",
+  borderColor: "border-color",
+  objectFit: "object-fit",
+  opacity: "opacity"
+};
+var STYLE_PROPERTIES = Object.keys(CSS_NAMES);
+var UNSAFE = /[;{}<>\\\r\n]/;
+function sanitizeStyleProps(props) {
+  const out = {};
+  if (!props || typeof props !== "object") return out;
+  for (const [key, value] of Object.entries(props)) {
+    if (!(key in CSS_NAMES)) continue;
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    const text = String(value).trim();
+    if (!text || UNSAFE.test(text)) continue;
+    out[key] = text;
+  }
+  return out;
+}
+function hasFieldStyle(style) {
+  if (!style) return false;
+  return ["desktop", "tablet", "phone"].some((d) => Object.keys(sanitizeStyleProps(style[d])).length > 0);
+}
+function setFieldStyle(sheet, section, path, style) {
+  const next = {};
+  for (const [key, fields] of Object.entries(sheet ?? {})) next[key] = { ...fields };
+  if (style && hasFieldStyle(style)) {
+    next[section] = { ...next[section] ?? {}, [path]: style };
+  } else if (next[section]) {
+    delete next[section][path];
+    if (Object.keys(next[section]).length === 0) delete next[section];
+  }
+  return next;
 }
 
 // src/admin/SectionEditorForm.tsx
@@ -1894,13 +1954,234 @@ var SectionEditorForm = ({
   ] });
 };
 
-// src/admin/CanvasEditor.tsx
+// src/admin/StylePanel.tsx
+var import_lucide_react6 = require("lucide-react");
 var import_jsx_runtime7 = require("react/jsx-runtime");
+var DEVICES = [
+  { key: "desktop", style: "desktop", label: "Desktop", icon: import_lucide_react6.Monitor },
+  { key: "tablet", style: "tablet", label: "Tablet", icon: import_lucide_react6.Tablet },
+  { key: "mobile", style: "phone", label: "Phone", icon: import_lucide_react6.Smartphone }
+];
+var FALLBACK = { desktop: [], tablet: ["desktop"], phone: ["tablet", "desktop"] };
+var inputClass = "w-full min-w-0 text-xs px-2.5 py-1.5 rounded-lg bg-slate-950/90 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400 transition-colors";
+var chipClass = (active) => `px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors ${active ? "bg-purple-600 text-white border-purple-400" : "bg-slate-950/70 text-slate-300 border-slate-700 hover:border-slate-500"}`;
+var Row = ({
+  label,
+  ownValue,
+  inheritedValue,
+  onClear,
+  children
+}) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-1", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-[11px] font-semibold text-slate-300", children: label }),
+    ownValue ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", onClick: onClear, className: "text-slate-500 hover:text-rose-300", title: `Clear ${label}`, "aria-label": `Clear ${label}`, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.X, { className: "w-3 h-3" }) }) : inheritedValue ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "text-[10px] text-slate-500", children: [
+      "inherited: ",
+      inheritedValue
+    ] }) : null
+  ] }),
+  children
+] });
+var Group = ({ title, children }) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("fieldset", { className: "space-y-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("legend", { className: "px-1 text-[10px] font-bold uppercase tracking-wider text-purple-300", children: title }),
+  children
+] });
+function pickerColor(value) {
+  const v = (value ?? "").trim();
+  if (/^#[0-9a-f]{6}$/i.test(v)) return v;
+  if (/^#[0-9a-f]{3}$/i.test(v)) return `#${v.slice(1).split("").map((c) => c + c).join("")}`;
+  return "#000000";
+}
+var StylePanel = ({
+  value,
+  device,
+  onDeviceChange,
+  options,
+  fonts,
+  isImage,
+  onChange,
+  onSave,
+  onReset,
+  isSaving,
+  hasSavedStyle
+}) => {
+  const styleDevice = DEVICES.find((d) => d.key === device)?.style ?? "desktop";
+  const own = value?.[styleDevice] ?? {};
+  const inherited = (key) => {
+    for (const d of FALLBACK[styleDevice]) {
+      const v = value?.[d]?.[key];
+      if (v) return v;
+    }
+    return void 0;
+  };
+  const set = (changes) => {
+    const next = { ...own };
+    for (const [key, v] of Object.entries(changes)) {
+      if (v === void 0 || v.trim() === "") delete next[key];
+      else next[key] = v;
+    }
+    const style = { ...value ?? {} };
+    if (Object.keys(next).length > 0) style[styleDevice] = next;
+    else delete style[styleDevice];
+    onChange(style);
+  };
+  const row = (label, prop, children) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Row, { label, ownValue: own[prop], inheritedValue: inherited(prop), onClear: () => set({ [prop]: void 0 }), children });
+  const textInput = (prop, placeholder) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    "input",
+    {
+      type: "text",
+      value: own[prop] ?? "",
+      placeholder: inherited(prop) ?? placeholder,
+      "aria-label": prop,
+      onChange: (e) => set({ [prop]: e.target.value }),
+      className: inputClass
+    }
+  );
+  const presets = (prop, list) => list && Object.keys(list).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex flex-wrap gap-1", children: Object.entries(list).map(([name, v]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: chipClass(own[prop] === v), onClick: () => set({ [prop]: v }), title: v, children: name }, name)) }) : null;
+  const colorRow = (label, prop) => row(
+    label,
+    prop,
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+      options?.colors && Object.keys(options.colors).length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.colors).map(([name, v]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("button", { type: "button", className: `${chipClass(own[prop] === v)} flex items-center gap-1`, onClick: () => set({ [prop]: v }), title: v, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "w-3 h-3 rounded-full border border-white/30", style: { background: v } }),
+        name
+      ] }, name)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          "input",
+          {
+            type: "color",
+            value: pickerColor(own[prop] ?? inherited(prop)),
+            "aria-label": `${label} picker`,
+            onChange: (e) => set({ [prop]: e.target.value }),
+            className: "h-8 w-10 shrink-0 cursor-pointer rounded-md border border-slate-700 bg-slate-950/90 p-0.5"
+          }
+        ),
+        textInput(prop, "#000000 or var(--color)")
+      ] })
+    ] })
+  );
+  const sides = (group) => {
+    const keys = ["Top", "Right", "Bottom", "Left"].map((side) => `${group}${side}`);
+    const all = (v) => set(Object.fromEntries(keys.map((k) => [k, v])));
+    const allSame = keys.every((k) => own[k] && own[k] === own[keys[0]]) ? own[keys[0]] : void 0;
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-[11px] font-semibold text-slate-300 capitalize", children: group }),
+        keys.some((k) => own[k]) && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", onClick: () => all(void 0), className: "text-slate-500 hover:text-rose-300", "aria-label": `Clear ${group}`, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.X, { className: "w-3 h-3" }) })
+      ] }),
+      options?.spacing && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.spacing).map(([name, v]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: chipClass(allSame === v), onClick: () => all(v), title: v, children: name }, name)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "grid grid-cols-4 gap-1", children: keys.map((k, i) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "input",
+        {
+          type: "text",
+          value: own[k] ?? "",
+          placeholder: inherited(k) ?? ["\u2191", "\u2192", "\u2193", "\u2190"][i],
+          "aria-label": k,
+          title: k,
+          onChange: (e) => set({ [k]: e.target.value }),
+          className: `${inputClass} text-center px-1`
+        },
+        k
+      )) })
+    ] });
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-xs font-bold text-white", children: "Device" }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl", children: DEVICES.map((d) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        "button",
+        {
+          type: "button",
+          onClick: () => onDeviceChange(d.key),
+          "aria-pressed": device === d.key,
+          className: `flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium ${device === d.key ? "bg-purple-900/80 text-purple-100 border border-purple-500/40" : "text-slate-400 hover:text-white"}`,
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(d.icon, { className: "w-3.5 h-3.5" }),
+            d.label
+          ]
+        },
+        d.key
+      )) })
+    ] }),
+    styleDevice !== "desktop" && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("p", { className: "text-[11px] text-slate-400", children: [
+      "Empty values use the ",
+      styleDevice === "phone" ? "tablet or desktop" : "desktop",
+      " value."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Typography", children: [
+      colorRow("Colour", "color"),
+      row("Font size", "fontSize", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+        presets("fontSize", options?.fontSizes),
+        textInput("fontSize", "e.g. 2rem or 32px")
+      ] })),
+      row("Weight", "fontWeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
+      fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-2 gap-2", children: [
+        row("Line height", "lineHeight", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("lineHeight", "e.g. 1.4") })),
+        row("Letter spacing", "letterSpacing", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+      ] }),
+      row("Align", "textAlign", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Spacing", children: [
+      sides("margin"),
+      sides("padding")
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Group, { title: "Size", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-3 gap-2", children: [
+      row("Width", "width", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("width", "auto") })),
+      row("Max width", "maxWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("maxWidth", "none") })),
+      row("Height", "height", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("height", "auto") }))
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Background & border", children: [
+      colorRow("Background", "backgroundColor"),
+      row("Corner radius", "borderRadius", /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+        presets("borderRadius", options?.radii),
+        textInput("borderRadius", "e.g. 12px")
+      ] })),
+      row("Border width", "borderWidth", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("borderWidth", "e.g. 1px") })),
+      colorRow("Border colour", "borderColor")
+    ] }),
+    isImage && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(Group, { title: "Image", children: [
+      row("Fit", "objectFit", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
+      row("Opacity", "opacity", /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children: textInput("opacity", "0 to 1") }))
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        "button",
+        {
+          type: "button",
+          onClick: () => void onReset(),
+          disabled: isSaving || !hasSavedStyle,
+          className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-amber-200 bg-amber-950/40 border border-amber-700/60 hover:bg-amber-900/60 disabled:opacity-40",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.RotateCcw, { className: "w-3.5 h-3.5" }),
+            "Reset styles"
+          ]
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        "button",
+        {
+          type: "button",
+          onClick: () => void onSave(),
+          disabled: isSaving,
+          className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 border border-purple-400 disabled:opacity-50",
+          children: [
+            isSaving ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Loader2, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Save, { className: "w-3.5 h-3.5" }),
+            "Save & Publish"
+          ]
+        }
+      )
+    ] })
+  ] });
+};
+
+// src/admin/CanvasEditor.tsx
+var import_jsx_runtime8 = require("react/jsx-runtime");
 var RECORD_SECTION = ":record";
 var DEVICE_VIEWPORTS = {
-  desktop: { label: "Desktop", width: 1280, icon: import_lucide_react6.Monitor },
-  tablet: { label: "Tablet", width: 768, icon: import_lucide_react6.Tablet },
-  mobile: { label: "Mobile", width: 390, icon: import_lucide_react6.Smartphone }
+  desktop: { label: "Desktop", width: 1280, icon: import_lucide_react7.Monitor },
+  tablet: { label: "Tablet", width: 768, icon: import_lucide_react7.Tablet },
+  mobile: { label: "Mobile", width: 390, icon: import_lucide_react7.Smartphone }
 };
 var CanvasEditor = ({ initialPage, onPageChange }) => {
   const { config, origins } = useStudio();
@@ -1931,7 +2212,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     const sections = [...pageDef?.sections ?? [], ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
-    return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: import_lucide_react6.Database }, ...sections];
+    return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: import_lucide_react7.Database }, ...sections];
   }, [pageDef, globalSections, recordTarget, config.pages]);
   const pageSections = availableSections.filter((s) => !globalSections.includes(s));
   const [activeSectionKey, setActiveSectionKey] = (0, import_react7.useState)(availableSections[0]?.key ?? "");
@@ -1993,7 +2274,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const currentRoute = pageDef ? pageDef.collection && activeItem ? fillRoute(pageDef.route, activeItem) : pageDef.route : "/";
   const isWaitingForRecord = isDynamicRoute(currentRoute);
   const activePageTitle = groupPage?.title || activePage;
-  const activePageIcon = groupPage?.icon || import_lucide_react6.Layers;
+  const activePageIcon = groupPage?.icon || import_lucide_react7.Layers;
   const iframeSrc = buildPreviewUrl(currentRoute, {
     publicSiteUrl: config.publicSiteUrl,
     editMode: isEditModeActive,
@@ -2233,6 +2514,63 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       values: draft
     });
   };
+  const stylesEnabled = config.styles?.enabled !== false;
+  const isStyleTarget = stylesEnabled && Boolean(activeFieldPath) && activeSectionKey !== RECORD_SECTION;
+  const [formTab, setFormTab] = (0, import_react7.useState)("content");
+  const [styleSheet, setStyleSheet] = (0, import_react7.useState)(null);
+  const [fieldStyle, setFieldStyleDraft] = (0, import_react7.useState)(void 0);
+  const [isSavingStyle, setIsSavingStyle] = (0, import_react7.useState)(false);
+  const showStyleTab = isStyleTarget && formTab === "style";
+  const loadStyleSheet = (0, import_react7.useCallback)(
+    async (page) => {
+      const record = await adapter.getRecord(page, STYLES_KEY, { includeDrafts: true });
+      const sheet = record?.content && typeof record.content === "object" ? record.content : {};
+      setStyleSheet({ page, sheet });
+      return sheet;
+    },
+    [adapter]
+  );
+  (0, import_react7.useEffect)(() => {
+    if (!isStyleTarget || !activeFieldPath) return;
+    let alive = true;
+    loadStyleSheet(sectionPage).then((sheet) => {
+      if (alive) setFieldStyleDraft(sheet[activeSectionKey]?.[activeFieldPath]);
+    }).catch(() => import_react_hot_toast4.default.error("Could not load the styles of this page."));
+    return () => {
+      alive = false;
+    };
+  }, [isStyleTarget, sectionPage, activeSectionKey, activeFieldPath, loadStyleSheet]);
+  (0, import_react7.useEffect)(() => {
+    if (!activeFieldPath) setFormTab("content");
+  }, [activeFieldPath]);
+  const savedFieldStyle = styleSheet && styleSheet.page === sectionPage && activeFieldPath ? styleSheet.sheet[activeSectionKey]?.[activeFieldPath] : void 0;
+  const handleStyleChange = (style) => {
+    if (!activeFieldPath) return;
+    setFieldStyleDraft(style);
+    hasUnsavedEdits.current = true;
+    sendToPreview({ type: CMS_MESSAGE.STYLE_DRAFT, page: sectionPage, sectionKey: activeSectionKey, path: activeFieldPath, style });
+  };
+  const writeFieldStyle = async (style) => {
+    if (!activeFieldPath) return;
+    setIsSavingStyle(true);
+    try {
+      const current = await loadStyleSheet(sectionPage);
+      const next = setFieldStyle(current, activeSectionKey, activeFieldPath, style);
+      if (Object.keys(next).length === 0) await adapter.deleteRecord(sectionPage, STYLES_KEY);
+      else await adapter.saveRecord({ page: sectionPage, sectionKey: STYLES_KEY, content: next, isPublished: true });
+      setStyleSheet({ page: sectionPage, sheet: next });
+      setFieldStyleDraft(next[activeSectionKey]?.[activeFieldPath]);
+      hasUnsavedEdits.current = false;
+      sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
+      import_react_hot_toast4.default.success(style ? "Styles saved and published" : "Styles reset");
+    } catch (err) {
+      import_react_hot_toast4.default.error(err instanceof Error && err.message ? err.message : "Could not save the styles.");
+    } finally {
+      setIsSavingStyle(false);
+    }
+  };
+  const fieldValue = activeFieldPath && sectionDetail ? getAtPath(sectionDetail.content, parseFieldPath(activeFieldPath)) : void 0;
+  const isImageValue = typeof fieldValue === "string" && (/\.(png|jpe?g|webp|svg|gif|avif)(\?.*)?$/i.test(fieldValue) || /(image|img|logo|photo|avatar|picture|src|banner|cover|thumbnail)/i.test(activeFieldPath ?? ""));
   const handleRefreshPreview = () => {
     setIsLoadingIframe(true);
     setIframeKey(Date.now());
@@ -2240,25 +2578,25 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const activeSectionDef = availableSections.find((s) => s.key === activeSectionKey);
   const currentSectionLabel = activeSectionDef?.label || activeSectionKey.replace(/([A-Z])/g, " $1");
   if (!pageDef) {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
       "No pages configured. Add pages to the ",
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("code", { className: "text-purple-300", children: "pages" }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("code", { className: "text-purple-300", children: "pages" }),
       " array of your CMS config."
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2 flex-wrap", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-2 flex-wrap", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
           import_react7.default.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
             "(",
             currentRoute,
             ")"
           ] })
         ] }),
-        topLevelPages(config).length > 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        topLevelPages(config).length > 1 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
           "select",
           {
             value: groupPage?.key ?? activePage,
@@ -2268,20 +2606,20 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": "Page to edit",
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-200 focus:outline-none focus:border-purple-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: p.key, children: [
+              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { value: p.key, children: [
                 p.title,
                 " (",
                 p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, "") || "/" : p.route,
                 ")"
               ] }, p.key)),
-              globalPage && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: globalPage.key, children: [
+              globalPage && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { value: globalPage.key, children: [
                 globalPage.title || "Site settings",
                 " (every page)"
               ] })
             ]
           }
         ),
-        groupPage && recordPages.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        groupPage && recordPages.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
           "select",
           {
             value: pageDef?.collection && activeItem ? `${pageDef.key}::${activeItem.id}` : "home",
@@ -2289,40 +2627,40 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": `Page of ${groupPage.title} to edit`,
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-sky-500/40 text-sky-200 focus:outline-none focus:border-sky-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              !groupPage.collection && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: "home", children: [
+              !groupPage.collection && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { value: "home", children: [
                 groupPage.title,
                 " home (",
                 groupPage.route,
                 ")"
               ] }),
-              groupPage.collection && !activeItem && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value: "home", children: "Pick a record" }),
+              groupPage.collection && !activeItem && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("option", { value: "home", children: "Pick a record" }),
               recordPages.map((rp) => {
                 const state = itemsByPage[rp.key];
-                const options = !state || state.status === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { disabled: true, value: `${rp.key}::loading`, children: [
+                const options = !state || state.status === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { disabled: true, value: `${rp.key}::loading`, children: [
                   "Loading ",
                   rp.title,
                   "..."
-                ] }) : state.status === "error" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { disabled: true, value: `${rp.key}::error`, children: [
+                ] }) : state.status === "error" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { disabled: true, value: `${rp.key}::error`, children: [
                   rp.title,
                   ": could not load (",
                   state.message,
                   ")"
-                ] }) : state.items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { disabled: true, value: `${rp.key}::none`, children: [
+                ] }) : state.items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("option", { disabled: true, value: `${rp.key}::none`, children: [
                   rp.title,
                   ": no records yet"
-                ] }) : state.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
-                return recordPages.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_react7.default.Fragment, { children: options }, rp.key);
+                ] }) : state.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
+                return recordPages.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_react7.default.Fragment, { children: options }, rp.key);
               })
             ]
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
           const conf = DEVICE_VIEWPORTS[mode];
           const Icon = conf.icon;
           const isCurrent = device === mode;
-          return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
             "button",
             {
               type: "button",
@@ -2330,43 +2668,43 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isCurrent ? "bg-purple-900/80 text-purple-200 border border-purple-500/40 shadow-sm" : "text-slate-400 hover:text-white"}`,
               title: `${conf.label} (${conf.width}px)`,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(Icon, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: conf.label })
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Icon, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: conf.label })
               ]
             },
             mode
           );
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1.5 shrink-0", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-1.5 shrink-0", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
             "button",
             {
               type: "button",
               onClick: toggleEditMode,
               className: `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border shrink-0 ${isEditModeActive ? "bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-900/30" : "bg-slate-950/70 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800/60"}`,
               title: isEditModeActive ? "Edit Mode is ON. Click to turn OFF and interact with webpage normally." : "Edit Mode is OFF. Click to turn ON and enable section edit buttons.",
-              children: isEditModeActive ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Edit Mode" })
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Eye, { className: "w-3 h-3 text-slate-400 shrink-0" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "View Mode" })
+              children: isEditModeActive ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Edit Mode" })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Eye, { className: "w-3 h-3 text-slate-400 shrink-0" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "View Mode" })
               ] })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
             "button",
             {
               type: "button",
               onClick: handleRefreshPreview,
               className: "p-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors",
               title: "Reload live canvas",
-              children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.RotateCcw, { className: "w-3.5 h-3.5" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.RotateCcw, { className: "w-3.5 h-3.5" })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
             "a",
             {
               href: publicUrl(currentRoute, config.publicSiteUrl),
@@ -2375,18 +2713,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-medium transition-colors",
               title: "Open in new window",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.ExternalLink, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "hidden sm:inline", children: "Open Live" })
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.ExternalLink, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "hidden sm:inline", children: "Open Live" })
               ]
             }
           )
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
             "button",
             {
               type: "button",
@@ -2395,20 +2733,20 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               "aria-controls": "cms-section-list",
               className: "w-full flex items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-slate-800/50 transition-colors",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
-                  !isSectionListOpen && activeSection && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
-                    activeSection.icon && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "truncate", children: activeSection.label })
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
+                  !isSectionListOpen && activeSection && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
+                    activeSection.icon && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "truncate", children: activeSection.label })
                   ] })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "flex items-center gap-2 shrink-0", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "flex items-center gap-2 shrink-0", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
                     "Page: ",
                     currentRoute
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-                    import_lucide_react6.ChevronDown,
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+                    import_lucide_react7.ChevronDown,
                     {
                       className: `w-4 h-4 text-purple-300 transition-transform ${isSectionListOpen ? "rotate-180" : ""}`
                     }
@@ -2417,26 +2755,26 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               ]
             }
           ),
-          isSectionListOpen && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
-              (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_react7.default.Fragment, { children: [
-                index === 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Globe, { className: "w-3 h-3" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Site-wide: shown on every page" })
+          isSectionListOpen && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_react7.default.Fragment, { children: [
+                index === 1 && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Globe, { className: "w-3 h-3" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Site-wide: shown on every page" })
                 ] }),
                 list.map((sec) => {
                   const isSelected = sec.key === activeSectionKey;
                   const IconComponent = sec.icon;
-                  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+                  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
                     "button",
                     {
                       type: "button",
                       onClick: () => handleSelectSection(sec.key),
                       className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected ? "bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400" : "bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800"}`,
                       children: [
-                        IconComponent && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: sec.label }),
-                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.ChevronRight, { className: "w-3 h-3 text-purple-200" })
+                        IconComponent && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: sec.label }),
+                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.ChevronRight, { className: "w-3 h-3 text-purple-200" })
                       ]
                     },
                     sec.key
@@ -2444,16 +2782,16 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 })
               ] }, index)
             ) }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Selecting a section scrolls the preview on the right to it." })
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Selecting a section scrolls the preview on the right to it." })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Loader2, { className: "w-6 h-6 animate-spin text-sky-400" }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Loading record..." })
-        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Loader2, { className: "w-6 h-6 animate-spin text-sky-400" }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Loading record..." })
+        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
           SectionEditorForm,
           {
             mode: "record",
@@ -2475,64 +2813,94 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             onReset: async () => void 0,
             onChangeDraft: handleRecordDraft
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Loader2, { className: "w-6 h-6 animate-spin text-purple-400" }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Loading section form..." })
-        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-          SectionEditorForm,
-          {
-            page: sectionPage,
-            sectionKey: activeSectionKey,
-            sectionLabel: activeSectionDef?.label,
-            pagePath: currentRoute,
-            transform: activeSectionDef?.transform,
-            focusPath: activeFieldPath,
-            onClearFocus: () => setActiveFieldPath(null),
-            onDirtyChange: (dirty) => {
-              hasUnsavedEdits.current = dirty;
+        ) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Loader2, { className: "w-6 h-6 animate-spin text-purple-400" }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Loading section form..." })
+        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+          isStyleTarget && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { role: "tablist", "aria-label": "Field editor", className: "flex items-center gap-1 p-1 mb-3 bg-slate-950/70 border border-slate-800 rounded-xl", children: ["content", "style"].map((tab) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            "button",
+            {
+              type: "button",
+              role: "tab",
+              "aria-selected": formTab === tab,
+              onClick: () => setFormTab(tab),
+              className: `flex-1 px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${formTab === tab ? "bg-purple-600 text-white" : "text-slate-400 hover:text-white"}`,
+              children: tab
             },
-            initialData: sectionDetail.content,
-            hasCustomOverride: sectionDetail.hasCustomOverride,
-            isPublished: sectionDetail.isPublished,
-            updatedAt: sectionDetail.updatedAt,
-            updatedBy: sectionDetail.updatedBy,
-            onSave: handleSaveSection,
-            onReset: handleResetSection,
-            onChangeDraft: handleDraftChange
-          }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
+            tab
+          )) }),
+          showStyleTab && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            StylePanel,
+            {
+              value: fieldStyle,
+              device,
+              onDeviceChange: setDevice,
+              options: config.styles,
+              fonts: config.fonts,
+              isImage: isImageValue,
+              onChange: handleStyleChange,
+              onSave: () => writeFieldStyle(fieldStyle && hasFieldStyle(fieldStyle) ? fieldStyle : null),
+              onReset: () => writeFieldStyle(null),
+              isSaving: isSavingStyle,
+              hasSavedStyle: hasFieldStyle(savedFieldStyle)
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { hidden: showStyleTab, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            SectionEditorForm,
+            {
+              page: sectionPage,
+              sectionKey: activeSectionKey,
+              sectionLabel: activeSectionDef?.label,
+              pagePath: currentRoute,
+              transform: activeSectionDef?.transform,
+              focusPath: activeFieldPath,
+              onClearFocus: () => setActiveFieldPath(null),
+              onDirtyChange: (dirty) => {
+                hasUnsavedEdits.current = dirty;
+              },
+              initialData: sectionDetail.content,
+              hasCustomOverride: sectionDetail.hasCustomOverride,
+              isPublished: sectionDetail.isPublished,
+              updatedAt: sectionDetail.updatedAt,
+              updatedBy: sectionDetail.updatedBy,
+              onSave: handleSaveSection,
+              onReset: handleResetSection,
+              onChangeDraft: handleDraftChange
+            }
+          ) })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2 min-w-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-2 min-w-0", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
               "span",
               {
                 className: `w-2 h-2 rounded-full shrink-0 ${isEditModeActive ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
               "Live Interactive Canvas: ",
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { className: "text-white", children: currentSectionLabel }),
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("strong", { className: "text-white", children: currentSectionLabel }),
               " is active in editor."
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+            ] }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
               "Normal Webpage Mode: Interacting normally without edit buttons. Toggle ",
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { children: "Edit Mode ON" }),
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("strong", { children: "Edit Mode ON" }),
               " to edit."
             ] }) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.CheckCircle2, { className: "w-3.5 h-3.5" }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.CheckCircle2, { className: "w-3.5 h-3.5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
           "div",
           {
             ref: viewportContainerRef,
             className: "relative min-h-[750px] h-[calc(100vh-160px)] bg-slate-950 rounded-2xl border border-purple-500/20 shadow-2xl p-2 sm:p-4 flex flex-col items-center justify-start overflow-hidden",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                 "div",
                 {
                   className: "absolute inset-0 pointer-events-none opacity-20",
@@ -2542,9 +2910,9 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                   }
                 }
               ),
-              isLoadingIframe && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Loader2, { className: "w-8 h-8 text-purple-400 animate-spin" }),
-                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
+              isLoadingIframe && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Loader2, { className: "w-8 h-8 text-purple-400 animate-spin" }),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
               ] }),
               (() => {
                 const targetWidth = DEVICE_VIEWPORTS[device].width;
@@ -2552,12 +2920,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 const availH = Math.max(containerSize.height - 24, 400);
                 const scale = availW < targetWidth ? availW / targetWidth : 1;
                 const unscaledHeight = availH / scale;
-                return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                   "div",
                   {
                     className: "w-full h-full flex items-start justify-center overflow-hidden",
                     style: { width: `${availW}px`, height: `${availH}px` },
-                    children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
                       "div",
                       {
                         style: {
@@ -2568,8 +2936,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                         },
                         className: `shrink-0 transition-all duration-200 overflow-hidden shadow-2xl border ${device === "mobile" ? "border-slate-700 bg-slate-900 rounded-[38px] p-2 ring-8 ring-slate-800" : device === "tablet" ? "border-slate-700 bg-slate-900 rounded-[28px] p-2 ring-4 ring-slate-800" : "border-slate-800 bg-white rounded-xl"}`,
                         children: [
-                          device === "mobile" && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
-                          isWaitingForRecord ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                          device === "mobile" && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
+                          isWaitingForRecord ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                             "iframe",
                             {
                               ref: iframeRef,
@@ -2595,7 +2963,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
 };
 
 // src/admin/CmsStudio.tsx
-var import_jsx_runtime8 = require("react/jsx-runtime");
+var import_jsx_runtime9 = require("react/jsx-runtime");
 function StudioContent({ config, initialPage, onPageChange }) {
   const firstPage = config.pages[0]?.key ?? "";
   const [activePage, setActivePage] = (0, import_react8.useState)(
@@ -2609,30 +2977,30 @@ function StudioContent({ config, initialPage, onPageChange }) {
     setActivePage(page);
     if (onPageChange) onPageChange(page);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Globe, { className: "w-6 h-6" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_lucide_react8.Globe, { className: "w-6 h-6" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
         "button",
         {
           type: "button",
           onClick: () => setIsGlobalPreviewOpen(true),
           className: "flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition-all",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_lucide_react7.Eye, { className: "w-4 h-4" }),
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: "Launch Live Preview" })
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_lucide_react8.Eye, { className: "w-4 h-4" }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: "Launch Live Preview" })
           ]
         }
       ) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       LivePreviewModal,
       {
         isOpen: isGlobalPreviewOpen,
@@ -2644,15 +3012,15 @@ function StudioContent({ config, initialPage, onPageChange }) {
 }
 var CmsStudio = (props) => {
   const { config, toaster = true } = props;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(StudioProvider, { config, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(StudioContent, { ...props }) }),
-    toaster && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_react_hot_toast5.Toaster, { position: "top-right" })
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(StudioProvider, { config, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(StudioContent, { ...props }) }),
+    toaster && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_react_hot_toast5.Toaster, { position: "top-right" })
   ] });
 };
 
 // src/admin/CmsNavButton.tsx
-var import_lucide_react8 = require("lucide-react");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+var import_lucide_react9 = require("lucide-react");
+var import_jsx_runtime10 = require("react/jsx-runtime");
 var CmsNavButton = ({
   href,
   active = false,
@@ -2660,7 +3028,7 @@ var CmsNavButton = ({
   as: Component = "a",
   className,
   ...rest
-}) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+}) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
   Component,
   {
     href,
@@ -2668,16 +3036,16 @@ var CmsNavButton = ({
     className: className ?? `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800/80"}`,
     ...rest,
     children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_lucide_react8.Globe, { className: "w-5 h-5" }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: label })
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_lucide_react9.Globe, { className: "w-5 h-5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: label })
     ]
   }
 );
 
 // src/admin/CmsAuth.tsx
 var import_react9 = require("react");
-var import_lucide_react9 = require("lucide-react");
-var import_jsx_runtime10 = require("react/jsx-runtime");
+var import_lucide_react10 = require("lucide-react");
+var import_jsx_runtime11 = require("react/jsx-runtime");
 function safeNext(value) {
   return value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : null;
 }
@@ -2702,29 +3070,29 @@ var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirect
     }
   };
   const field = "w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30";
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex flex-col items-center gap-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_lucide_react9.Lock, { className: "h-6 w-6" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h1", { className: "text-xl font-bold", children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col items-center gap-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_lucide_react10.Lock, { className: "h-6 w-6" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h1", { className: "text-xl font-bold", children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Username",
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Password",
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
     ] }),
-    error && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+    error && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
       "button",
       {
         type: "submit",
         disabled: busy,
         className: "flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-purple-500 disabled:opacity-60",
         children: [
-          busy && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_lucide_react9.Loader2, { className: "h-4 w-4 animate-spin" }),
+          busy && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_lucide_react10.Loader2, { className: "h-4 w-4 animate-spin" }),
           busy ? "Signing in..." : "Sign in"
         ]
       }
@@ -2757,17 +3125,17 @@ var CmsAuthGate = ({ auth, loginPath, title, children }) => {
   (0, import_react9.useEffect)(() => {
     void verify();
   }, [verify]);
-  if (state === "in" || state === "login-page") return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children });
-  if (state === "out") return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CmsLogin, { auth, title, onSuccess: () => void verify() });
+  if (state === "in" || state === "login-page") return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children });
+  if (state === "out") return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CmsLogin, { auth, title, onSuccess: () => void verify() });
   if (state === "error") {
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "text-sm text-slate-300", children: message }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "text-sm text-slate-300", children: message }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_lucide_react9.Loader2, { className: "h-6 w-6 animate-spin" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_lucide_react10.Loader2, { className: "h-6 w-6 animate-spin" }) });
 };
-var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
   "button",
   {
     type: "button",
@@ -2776,8 +3144,8 @@ var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @_
       auth.logout();
       window.location.assign(redirectTo);
     },
-    children: children ?? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_lucide_react9.LogOut, { className: "h-3.5 w-3.5" }),
+    children: children ?? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_lucide_react10.LogOut, { className: "h-3.5 w-3.5" }),
       " Sign out"
     ] })
   }
