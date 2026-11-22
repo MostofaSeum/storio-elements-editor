@@ -3,6 +3,7 @@ import {
   EDIT_MODE_PARAM,
   PREVIEW_PARAM,
   defineCms,
+  findGlobalPage,
   findPage,
   getSectionDetail,
   getSectionKeys,
@@ -13,8 +14,45 @@ import {
   mergePageContent,
   originOf,
   postCmsMessage,
+  resolveSectionPage,
   trustedOrigins
-} from "./chunk-7MTQVADH.mjs";
+} from "./chunk-CEOSGCRC.mjs";
+
+// src/core/theme.ts
+function themeToCssVariables(theme, options = {}) {
+  const prefix = options.prefix ?? "--";
+  const out = {};
+  const walk = (value, name) => {
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).trim();
+      if (!text || /[;{}<>\\\r\n]/.test(text)) return;
+      const key = name.map(toKebab).filter(Boolean).join("-");
+      if (/^[a-z0-9-]+$/.test(key)) out[prefix + key] = text;
+      return;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      for (const [key, inner] of Object.entries(value)) walk(inner, [...name, key]);
+    }
+  };
+  walk(theme, []);
+  return out;
+}
+function themeToCss(theme, options = {}) {
+  const vars = themeToCssVariables(theme, options);
+  const body = Object.entries(vars).map(([key, value]) => `${key}:${value};`).join("");
+  return body ? `${options.selector ?? ":root"}{${body}}` : "";
+}
+function toKebab(part) {
+  return part.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase();
+}
+function isColorField(fieldName, value) {
+  if (typeof value !== "string") return false;
+  if (/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value.trim())) return true;
+  return /colou?r$/i.test(fieldName) && (value === "" || /^#/.test(value.trim()));
+}
+function isFontField(fieldName, value, fonts) {
+  return !!fonts?.length && typeof value === "string" && /font$/i.test(fieldName);
+}
 
 // src/core/paths.ts
 function publicUrl(route, publicSiteUrl) {
@@ -54,12 +92,15 @@ export {
   buildPreviewUrl,
   defineCms,
   fillRoute,
+  findGlobalPage,
   findPage,
   getSectionDetail,
   getSectionKeys,
   groupPageOf,
   isCmsMessage,
+  isColorField,
   isDynamicRoute,
+  isFontField,
   isValidKey,
   listManagedSections,
   listenForCmsMessages,
@@ -68,6 +109,9 @@ export {
   postCmsMessage,
   publicUrl,
   recordPagesOf,
+  resolveSectionPage,
+  themeToCss,
+  themeToCssVariables,
   topLevelPages,
   trustedOrigins
 };

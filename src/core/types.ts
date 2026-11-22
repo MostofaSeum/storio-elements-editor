@@ -40,6 +40,13 @@ export interface PageDef {
    * page's records in a second menu next to the parent page instead of in the page menu.
    */
   parent?: string;
+  /**
+   * Site-wide content: header, footer, contact details, SEO defaults, theme. The sections of a
+   * global page can be edited from every page in the studio and read on every page of the site
+   * (`useSiteContent`). Its `route` is only the page shown while "Site settings" is open.
+   * At most one page may be global.
+   */
+  global?: boolean;
   icon?: IconComponent;
   /** Editable sections, in the order they appear in the studio. */
   sections: SectionDef[];
@@ -174,6 +181,11 @@ export interface CmsConfig {
    * Without it the picker offers a built-in list of popular lucide-react icons.
    */
   icons?: Record<string, IconComponent>;
+  /**
+   * Font names your site already loads (for example with next/font). A field whose name ends in
+   * "font" (e.g. "headingFont") then offers exactly these in a list.
+   */
+  fonts?: string[];
   /**
    * Item limits for array fields. Keys are tried in this order:
    * "page.section.path", "page.path", "section.path", "page.section".

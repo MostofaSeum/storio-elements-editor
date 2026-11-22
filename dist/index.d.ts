@@ -1,5 +1,5 @@
-import { a as CmsConfig, P as PageDef, S as SectionRecord, b as SectionDetail, c as SectionMetadata, d as CollectionItemSummary } from './types-Dz7fHJXe.js';
-export { C as CmsStorageAdapter, e as CmsWidgets, f as CodeValue, g as CodeWidgetProps, h as CollectionLimit, I as IconComponent, i as ImagePreset, j as ImagePresetCategory, L as ListOptions, M as MediaItem, k as SaveRecordInput, l as SectionDef } from './types-Dz7fHJXe.js';
+import { a as CmsConfig, P as PageDef, S as SectionRecord, b as SectionDetail, c as SectionMetadata, d as CollectionItemSummary } from './types-SBxa2Bl2.js';
+export { C as CmsStorageAdapter, e as CmsWidgets, f as CodeValue, g as CodeWidgetProps, h as CollectionLimit, I as IconComponent, i as ImagePreset, j as ImagePresetCategory, L as ListOptions, M as MediaItem, k as SaveRecordInput, l as SectionDef } from './types-SBxa2Bl2.js';
 import 'react';
 
 /** True for keys safe to use as page or section identifiers in storage and URLs. */
@@ -9,7 +9,33 @@ declare function isValidKey(key: string): boolean;
  * so mistakes surface at startup instead of as silent save failures.
  */
 declare function defineCms(config: CmsConfig): CmsConfig;
+/** The page with `global: true` (site-wide content), if any. */
+declare function findGlobalPage(config: Pick<CmsConfig, 'pages'>): PageDef | undefined;
+/**
+ * Which page a section belongs to, as seen from the page open in the studio: the page named by
+ * the click, else the open page, else the global page.
+ */
+declare function resolveSectionPage(config: Pick<CmsConfig, 'pages'>, currentPage: string, sectionKey: string, requestedPage?: string): string | undefined;
 declare function findPage(config: Pick<CmsConfig, 'pages'>, pageKey: string): PageDef | undefined;
+
+/**
+ * Turn a theme section ({ primaryColor: "#7c3aed", headingFont: "Inter" }) into CSS variables
+ * (--primary-color, --heading-font). Nested objects are joined with "-": { colors: { brand } }
+ * becomes --colors-brand. Only strings and numbers are used, and values that could break out of
+ * the declaration (";", "{", "}", "<", ">", "\" or a line break) are skipped, because editors type them.
+ */
+declare function themeToCssVariables(theme: unknown, options?: {
+    prefix?: string;
+}): Record<string, string>;
+/** CSS text for a theme section: `:root{--primary-color:#7c3aed;}`. Use `selector` for a scope other than :root. */
+declare function themeToCss(theme: unknown, options?: {
+    prefix?: string;
+    selector?: string;
+}): string;
+/** True when a form field holds a colour: a hex value, or a name ending in "color"/"colour". */
+declare function isColorField(fieldName: string, value: unknown): boolean;
+/** True when a form field picks one of the site's fonts (`fonts` in defineCms). */
+declare function isFontField(fieldName: string, value: unknown, fonts: string[] | undefined): boolean;
 
 /**
  * Full content of a page: its defaults, with each saved override replacing its
@@ -53,6 +79,8 @@ declare const EDIT_MODE_PARAM = "cms_edit_mode";
 type CmsMessage = {
     type: typeof CMS_MESSAGE.EDIT_SECTION;
     sectionKey: string;
+    /** Page the section belongs to, e.g. the global page for a navbar. Default: the open page. */
+    page?: string;
     title?: string;
     fieldPath?: string;
     /** Set when the field belongs to a collection record instead of a section. */
@@ -120,4 +148,4 @@ declare function groupPageOf(config: Pick<CmsConfig, 'pages'>, page: PageDef): P
  */
 declare function recordPagesOf(config: Pick<CmsConfig, 'pages'>, group: PageDef): PageDef[];
 
-export { CMS_MESSAGE, CmsConfig, type CmsMessage, CollectionItemSummary, EDIT_MODE_PARAM, PREVIEW_PARAM, PageDef, SectionDetail, SectionMetadata, SectionRecord, buildPreviewUrl, defineCms, fillRoute, findPage, getSectionDetail, getSectionKeys, groupPageOf, isCmsMessage, isDynamicRoute, isValidKey, listManagedSections, listenForCmsMessages, mergePageContent, originOf, postCmsMessage, publicUrl, recordPagesOf, topLevelPages, trustedOrigins };
+export { CMS_MESSAGE, CmsConfig, type CmsMessage, CollectionItemSummary, EDIT_MODE_PARAM, PREVIEW_PARAM, PageDef, SectionDetail, SectionMetadata, SectionRecord, buildPreviewUrl, defineCms, fillRoute, findGlobalPage, findPage, getSectionDetail, getSectionKeys, groupPageOf, isCmsMessage, isColorField, isDynamicRoute, isFontField, isValidKey, listManagedSections, listenForCmsMessages, mergePageContent, originOf, postCmsMessage, publicUrl, recordPagesOf, resolveSectionPage, themeToCss, themeToCssVariables, topLevelPages, trustedOrigins };

@@ -20,7 +20,7 @@ Supports Django 4.2, 5.x and 6.x (tested on 4.2, 5.2 and 6.0).
 To install it yourself, from GitHub (the package lives in the `django-storio-elements-editor` folder of the repository):
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.1.0#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.2.0#subdirectory=django-storio-elements-editor"
 ```
 
 Then `python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000` makes the settings and urls changes below automatically (add `--dry-run` to preview them), or follow the steps by hand.
@@ -157,7 +157,7 @@ STORIO_EDITOR = {
     # Who may edit. A dotted path to a function that receives the request.
     "AUTHORIZE": "storio_elements_editor.permissions.is_staff_user",
     # Restrict which page keys can be stored (use your frontend config's page keys).
-    "ALLOWED_PAGES": None,          # e.g. ["home", "pricing"]
+    "ALLOWED_PAGES": None,          # e.g. ["home", "pricing", "site"]; include your global page key
     "MAX_BODY_BYTES": 1_048_576,    # largest section save (1 MB)
     "MAX_UPLOAD_BYTES": 5_242_880,  # largest image upload (5 MB)
     "UPLOAD_DIR": "cms-uploads",    # folder inside your media storage

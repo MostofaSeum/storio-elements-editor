@@ -56,6 +56,25 @@ export const cmsLogin = cmsAuth({ baseUrl: API_URL });
     //   sections: [{ key: 'hero', label: 'Hero' }],
     // },`;
 
+  const globalPageHint = `    // Site-wide content (navbar, footer, contact details, SEO defaults, theme colours):
+    // one page with global: true. Its sections can be edited from every page in the studio.
+    // Read it with useSiteContent(), and wrap the navbar in <CmsSection sectionKey="header" page="site">.
+    //
+    // {
+    //   key: 'site',
+    //   title: 'Site settings',
+    //   route: '/',
+    //   global: true,
+    //   defaults: siteContent,
+    //   sections: [
+    //     { key: 'header', label: 'Header' },
+    //     { key: 'footer', label: 'Footer' },
+    //     { key: 'contact', label: 'Contact & social' },
+    //     { key: 'seo', label: 'SEO defaults' },
+    //     { key: 'theme', label: 'Theme' },
+    //   ],
+    // },`;
+
   return `import { defineCms } from '@brainicon/storio-elements-editor';
 ${adapterImport}
 ${opts.example ? `import example from '${opts.exampleJsonImport}';\n` : ''}${apiSetup}
@@ -64,6 +83,7 @@ export const cms = defineCms({
   adapter: ${adapter}
   pages: [
 ${opts.example ? examplePage : noPages}
+${globalPageHint}
   ],
 });
 `;

@@ -1,10 +1,11 @@
 import {
   EDIT_MODE_PARAM,
   PREVIEW_PARAM,
+  findGlobalPage,
   findPage,
   isValidKey,
   mergePageContent
-} from "./chunk-7MTQVADH.mjs";
+} from "./chunk-CEOSGCRC.mjs";
 
 // src/next/createCmsRouteHandler.ts
 function json(body, status = 200) {
@@ -351,9 +352,50 @@ function buildPageMetadata(content, fallback = {}) {
     robots: seo.robots ? { index, follow } : fallback.robots
   };
 }
+function buildSiteMetadata(seo, fallback = {}) {
+  if (!seo || typeof seo !== "object") return fallback;
+  const page = buildPageMetadata({ seo }, fallback);
+  const defaultTitle = seo.title || seo.siteName || (typeof fallback.title === "string" ? fallback.title : void 0);
+  const template = seo.titleTemplate && seo.titleTemplate.includes("%s") ? seo.titleTemplate : void 0;
+  return {
+    ...page,
+    title: template && defaultTitle ? { default: defaultTitle, template } : defaultTitle ?? fallback.title,
+    openGraph: {
+      ...page.openGraph,
+      title: seo.ogTitle || defaultTitle,
+      siteName: seo.siteName || fallback.openGraph?.siteName
+    },
+    twitter: { ...page.twitter, title: seo.ogTitle || defaultTitle },
+    icons: seo.favicon ? { icon: seo.favicon } : fallback.icons
+  };
+}
+async function getSiteMetadata(config, options) {
+  const globalPage = findGlobalPage(config);
+  if (!globalPage) return options.fallback ?? {};
+  const content = await getPageContent(config, globalPage.key, { storage: options.storage });
+  return buildSiteMetadata(content[options.section ?? "seo"], options.fallback);
+}
 async function getPageMetadata(config, pageKey, options) {
   const content = await getPageContent(config, pageKey, { storage: options.storage });
-  return buildPageMetadata(content, options.fallback);
+  let fallback = options.fallback ?? {};
+  const globalPage = options.site === false ? void 0 : findGlobalPage(config);
+  if (globalPage && globalPage.key !== pageKey) {
+    const site = await getPageContent(config, globalPage.key, { storage: options.storage });
+    fallback = mergeSiteFallback(site.seo, fallback);
+  }
+  return buildPageMetadata(content, fallback);
+}
+function mergeSiteFallback(seo, fallback) {
+  if (!seo || typeof seo !== "object") return fallback;
+  const { title: _title, ogTitle: _ogTitle, canonical: _canonical, ...rest } = seo;
+  const site = buildSiteMetadata({ ...rest, title: void 0 }, {});
+  return {
+    ...site,
+    title: void 0,
+    ...fallback,
+    openGraph: { ...site.openGraph, title: void 0, url: void 0, ...fallback.openGraph },
+    twitter: { ...site.twitter, title: void 0, ...fallback.twitter }
+  };
 }
 
 // src/next/isCmsPreviewRequest.ts
@@ -373,10 +415,12 @@ function isCmsPreviewRequest(request, options = {}) {
 }
 export {
   buildPageMetadata,
+  buildSiteMetadata,
   createCmsRouteHandler,
   fileStorage,
   getAllPageContent,
   getPageContent,
   getPageMetadata,
+  getSiteMetadata,
   isCmsPreviewRequest
 };

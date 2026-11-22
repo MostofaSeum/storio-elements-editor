@@ -2,6 +2,8 @@ import { createContext } from 'react';
 
 export interface CmsSectionContextValue {
   sectionKey: string;
+  /** Page the section belongs to when it is not the open page (e.g. the global page). */
+  page?: string;
   /** True when this section shows its edit controls in the studio preview. */
   isEditMode: boolean;
   /** Origins allowed to receive preview messages. */

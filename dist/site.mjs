@@ -3,14 +3,16 @@ import {
   CMS_MESSAGE,
   EDIT_MODE_PARAM,
   PREVIEW_PARAM,
+  findGlobalPage,
   findPage,
   getAtPath,
   listenForCmsMessages,
   mergePageContent,
   parseFieldPath,
   postCmsMessage,
+  themeToCss,
   trustedOrigins
-} from "./chunk-P3OVPICU.mjs";
+} from "./chunk-YQGKZECL.mjs";
 
 // src/site/CmsProvider.tsx
 import { createContext, useContext, useEffect as useEffect2, useMemo, useState as useState2 } from "react";
@@ -110,6 +112,23 @@ function usePageContent(pageKey, options = {}) {
   }, [pageKey, config.adapter, originsKey]);
   return content;
 }
+function useSiteContent(options = {}) {
+  const { config } = useCmsContext();
+  const globalPage = findGlobalPage(config);
+  if (!globalPage) {
+    throw new Error('[storio-editor] useSiteContent needs a page with global: true in the "pages" array of your CMS config.');
+  }
+  return usePageContent(globalPage.key, options);
+}
+
+// src/site/CmsThemeStyle.tsx
+import { jsx as jsx2 } from "react/jsx-runtime";
+var CmsThemeStyle = ({ section = "theme", prefix, selector }) => {
+  const site = useSiteContent();
+  const css = themeToCss(site[section], { prefix, selector });
+  if (!css) return null;
+  return /* @__PURE__ */ jsx2("style", { "data-cms-theme": section, dangerouslySetInnerHTML: { __html: css } });
+};
 
 // src/site/CmsSection.tsx
 import { useState as useState3, useEffect as useEffect3, useMemo as useMemo2, useRef, useSyncExternalStore } from "react";
@@ -148,7 +167,7 @@ function subscribeToFieldHover(listener) {
 }
 
 // src/site/CmsSection.tsx
-import { jsx as jsx2, jsxs } from "react/jsx-runtime";
+import { jsx as jsx3, jsxs } from "react/jsx-runtime";
 var BUTTON_TOP = {
   inside: 24,
   "inside-low": 112,
@@ -160,6 +179,7 @@ var BUTTON_HEIGHT = 56;
 var CmsSection = ({
   sectionKey,
   title,
+  page,
   activeOnPath,
   buttonPlacement = "inside",
   children
@@ -181,9 +201,9 @@ var CmsSection = ({
   const isValidPath = !activeOnPath || pathname === activeOnPath;
   const showButton = isEditMode && isValidPath && (isSectionHovered || isTargeted);
   const sectionContext = useMemo2(
-    () => ({ sectionKey, isEditMode: isEditMode && isValidPath, origins }),
+    () => ({ sectionKey, page, isEditMode: isEditMode && isValidPath, origins }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sectionKey, isEditMode, isValidPath, originsKey]
+    [sectionKey, page, isEditMode, isValidPath, originsKey]
   );
   useEffect3(() => {
     if (!isEditMode) return;
@@ -242,6 +262,7 @@ var CmsSection = ({
         {
           type: CMS_MESSAGE.EDIT_SECTION,
           sectionKey,
+          ...page ? { page } : {},
           title
         },
         origins
@@ -254,7 +275,7 @@ var CmsSection = ({
     setIsHovered(!target.closest("[data-cms-field]") && target.closest("[data-cms-section]") === sectionRef.current);
   };
   if (!isEditMode || !isValidPath) {
-    return /* @__PURE__ */ jsx2(CmsSectionContext.Provider, { value: sectionContext, children });
+    return /* @__PURE__ */ jsx3(CmsSectionContext.Provider, { value: sectionContext, children });
   }
   return /* @__PURE__ */ jsxs(
     "div",
@@ -266,9 +287,9 @@ var CmsSection = ({
       onMouseLeave: () => setIsHovered(false),
       className: `relative transition-all duration-300 cursor-pointer rounded-2xl ${isTargeted ? "ring-4 ring-purple-500 ring-offset-4 ring-offset-slate-950 shadow-[0_0_60px_rgba(168,85,247,0.5)]" : isSectionHovered ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-900" : ""}`,
       children: [
-        /* @__PURE__ */ jsx2(CmsSectionContext.Provider, { value: sectionContext, children }),
+        /* @__PURE__ */ jsx3(CmsSectionContext.Provider, { value: sectionContext, children }),
         showButton && buttonPosition && createPortal(
-          /* @__PURE__ */ jsx2(
+          /* @__PURE__ */ jsx3(
             "div",
             {
               ref: buttonRef,
@@ -282,7 +303,7 @@ var CmsSection = ({
                   className: "flex items-center gap-2.5 px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-sm sm:text-base tracking-wide shadow-2xl shadow-purple-950/80 border-2 border-purple-300/80 backdrop-blur-xl cursor-pointer transition-all hover:scale-105 active:scale-95 whitespace-nowrap",
                   title: `Edit ${title} in the editor panel`,
                   children: [
-                    /* @__PURE__ */ jsx2(Pencil, { className: "w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] text-purple-100" }),
+                    /* @__PURE__ */ jsx3(Pencil, { className: "w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] text-purple-100" }),
                     /* @__PURE__ */ jsxs("span", { className: "drop-shadow-sm", children: [
                       "Edit ",
                       title
@@ -355,7 +376,7 @@ function useCollectionItem(collection, item, values) {
 }
 
 // src/site/CmsField.tsx
-import { Fragment, jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx4, jsxs as jsxs2 } from "react/jsx-runtime";
 var PENCIL_SIZE = 30;
 var WINDOW_MARGIN2 = 4;
 var HIDE_DELAY_MS = 400;
@@ -413,7 +434,7 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
     measure();
     return () => cancelAnimationFrame(frame);
   }, [showControls]);
-  if (!isEditMode) return /* @__PURE__ */ jsx3(Fragment, { children });
+  if (!isEditMode) return /* @__PURE__ */ jsx4(Fragment, { children });
   const open = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -443,7 +464,7 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
         children,
         showControls && box && createPortal2(
           /* @__PURE__ */ jsxs2(Fragment, { children: [
-            /* @__PURE__ */ jsx3(
+            /* @__PURE__ */ jsx4(
               "div",
               {
                 "aria-hidden": "true",
@@ -461,7 +482,7 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
                 }
               }
             ),
-            /* @__PURE__ */ jsx3(
+            /* @__PURE__ */ jsx4(
               "button",
               {
                 ref: pencilRef,
@@ -488,7 +509,7 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
                   cursor: "pointer",
                   zIndex: EDIT_BUTTON_Z_INDEX + 1
                 },
-                children: /* @__PURE__ */ jsx3(Pencil2, { size: 14, strokeWidth: 2.5, "aria-hidden": "true" })
+                children: /* @__PURE__ */ jsx4(Pencil2, { size: 14, strokeWidth: 2.5, "aria-hidden": "true" })
               }
             )
           ] }),
@@ -498,25 +519,59 @@ var FieldFrame = ({ path, name, isEditMode, onOpen, children }) => {
     }
   );
 };
-var SectionField = ({ path, label, children }) => {
-  const section = useContext2(CmsSectionContext);
+var SectionField = ({ path, label, section: sectionProp, page, children }) => {
+  const surrounding = useContext2(CmsSectionContext);
   const name = label ?? labelFromPath(path);
   useEffect5(() => {
-    if (!section && new URLSearchParams(window.location.search).has(EDIT_MODE_PARAM)) {
+    if (!surrounding && !sectionProp && new URLSearchParams(window.location.search).has(EDIT_MODE_PARAM)) {
       console.warn(`[storio-editor] <CmsField path="${path}"> must be placed inside a <CmsSection>, or given collection and item.`);
     }
-  }, [section, path]);
-  if (!section) return /* @__PURE__ */ jsx3(Fragment, { children });
-  return /* @__PURE__ */ jsx3(
+  }, [surrounding, sectionProp, path]);
+  if (sectionProp) {
+    return /* @__PURE__ */ jsx4(OtherSectionField, { path, name, sectionKey: sectionProp, page, children });
+  }
+  if (!surrounding) return /* @__PURE__ */ jsx4(Fragment, { children });
+  const targetPage = page ?? surrounding.page;
+  return /* @__PURE__ */ jsx4(
     FieldFrame,
     {
       path,
       name,
-      isEditMode: section.isEditMode,
+      isEditMode: surrounding.isEditMode,
       onOpen: () => postCmsMessage(
         window.parent,
-        { type: CMS_MESSAGE.EDIT_SECTION, sectionKey: section.sectionKey, title: name, fieldPath: path },
-        section.origins
+        {
+          type: CMS_MESSAGE.EDIT_SECTION,
+          sectionKey: surrounding.sectionKey,
+          ...targetPage ? { page: targetPage } : {},
+          title: name,
+          fieldPath: path
+        },
+        surrounding.origins
+      ),
+      children
+    }
+  );
+};
+var OtherSectionField = ({
+  path,
+  name,
+  sectionKey,
+  page,
+  children
+}) => {
+  const { origins } = useCmsContext();
+  const isEditMode = useCmsEditMode(origins);
+  return /* @__PURE__ */ jsx4(
+    FieldFrame,
+    {
+      path,
+      name,
+      isEditMode,
+      onOpen: () => postCmsMessage(
+        window.parent,
+        { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...page ? { page } : {}, title: name, fieldPath: path },
+        origins
       ),
       children
     }
@@ -538,7 +593,7 @@ var RecordField = ({
     const value = getAtPath(draft, parseFieldPath(path));
     if (typeof value === "string" || typeof value === "number") content = value;
   }
-  return /* @__PURE__ */ jsx3(
+  return /* @__PURE__ */ jsx4(
     FieldFrame,
     {
       path,
@@ -555,13 +610,13 @@ var RecordField = ({
 };
 var CmsField = ({ collection, item, ...props }) => {
   if (collection && item !== void 0 && item !== null && item !== "") {
-    return /* @__PURE__ */ jsx3(RecordField, { ...props, collection, item: String(item) });
+    return /* @__PURE__ */ jsx4(RecordField, { ...props, collection, item: String(item) });
   }
-  return /* @__PURE__ */ jsx3(SectionField, { ...props });
+  return /* @__PURE__ */ jsx4(SectionField, { ...props });
 };
 
 // src/site/CmsIcon.tsx
-import { jsx as jsx4 } from "react/jsx-runtime";
+import { jsx as jsx5 } from "react/jsx-runtime";
 var warned = /* @__PURE__ */ new Set();
 var CmsIcon = ({ name, fallback, ...props }) => {
   const icons = useCmsConfig().icons;
@@ -576,16 +631,18 @@ var CmsIcon = ({ name, fallback, ...props }) => {
     return null;
   }
   const Component = Icon;
-  return /* @__PURE__ */ jsx4(Component, { "aria-hidden": "true", ...props });
+  return /* @__PURE__ */ jsx5(Component, { "aria-hidden": "true", ...props });
 };
 export {
   CmsField,
   CmsIcon,
   CmsProvider,
   CmsSection,
+  CmsThemeStyle,
   isCmsPreview,
   useCmsConfig,
   useCmsEditMode,
   useCollectionItem,
-  usePageContent
+  usePageContent,
+  useSiteContent
 };

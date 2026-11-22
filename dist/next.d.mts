@@ -1,4 +1,4 @@
-import { d as CollectionItemSummary, C as CmsStorageAdapter, a as CmsConfig } from './types-Dz7fHJXe.mjs';
+import { d as CollectionItemSummary, C as CmsStorageAdapter, a as CmsConfig } from './types-SBxa2Bl2.mjs';
 import { Metadata } from 'next';
 import 'react';
 
@@ -85,6 +85,15 @@ interface PageSeoConfig {
     /** e.g. "index, follow" or "noindex, nofollow". */
     robots?: string;
 }
+/** Shape of the optional "seo" section of the global page: site-wide defaults. */
+interface SiteSeoConfig extends PageSeoConfig {
+    /** Site name, e.g. "Brainicon". Used for og:site_name and as the title when a page has none. */
+    siteName?: string;
+    /** Title of every page, with %s for the page title, e.g. "%s | Brainicon". */
+    titleTemplate?: string;
+    /** Favicon URL, e.g. "/favicon.ico". */
+    favicon?: string;
+}
 /**
  * Load a page's published content on the server (Server Components,
  * generateMetadata, getServerSideProps). Falls back to the page defaults when
@@ -107,10 +116,29 @@ declare function getAllPageContent(config: Pick<CmsConfig, 'pages'>, options: {
 declare function buildPageMetadata(content: {
     seo?: PageSeoConfig;
 } | Record<string, unknown>, fallback?: Metadata): Metadata;
-/** Convenience for `generateMetadata`: load the page and build its metadata. */
+/**
+ * Build the site-wide metadata for the root layout from the global page's "seo" section:
+ * a title template, the default description and share image, og:site_name and the favicon.
+ */
+declare function buildSiteMetadata(seo: SiteSeoConfig | undefined, fallback?: Metadata): Metadata;
+/**
+ * For `generateMetadata` in the root layout: the site-wide metadata from the global page
+ * (the page with `global: true`). Without a global page it returns `fallback`.
+ */
+declare function getSiteMetadata(config: Pick<CmsConfig, 'pages'>, options: {
+    storage: CmsStorageAdapter;
+    fallback?: Metadata;
+    section?: string;
+}): Promise<Metadata>;
+/**
+ * Convenience for `generateMetadata`: load the page and build its metadata. When the config has
+ * a global page, its "seo" section fills what the page leaves empty (description, share image),
+ * so a page without SEO of its own still gets the site defaults. Pass `site: false` to skip that.
+ */
 declare function getPageMetadata(config: Pick<CmsConfig, 'pages'>, pageKey: string, options: {
     storage: CmsStorageAdapter;
     fallback?: Metadata;
+    site?: boolean;
 }): Promise<Metadata>;
 
 /**
@@ -130,4 +158,4 @@ declare function isCmsPreviewRequest(request: {
     studioPath?: string;
 }): boolean;
 
-export { type CmsCollectionHandler, type CmsRouteHandlerOptions, type FileStorageOptions, type PageSeoConfig, buildPageMetadata, createCmsRouteHandler, fileStorage, getAllPageContent, getPageContent, getPageMetadata, isCmsPreviewRequest };
+export { type CmsCollectionHandler, type CmsRouteHandlerOptions, type FileStorageOptions, type PageSeoConfig, type SiteSeoConfig, buildPageMetadata, buildSiteMetadata, createCmsRouteHandler, fileStorage, getAllPageContent, getPageContent, getPageMetadata, getSiteMetadata, isCmsPreviewRequest };

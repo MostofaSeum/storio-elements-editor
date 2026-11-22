@@ -24,6 +24,14 @@ export interface CmsFieldProps {
   collection?: string;
   /** The record's id, the same id your collection handler's `get` and `save` receive. */
   item?: string | number;
+  /**
+   * Edit a value of another section than the surrounding one, or a value shown outside any
+   * <CmsSection>: for example the site phone number from the global page inside the contact page.
+   * Use with `page` (the global page's key) when the section is not on the open page.
+   */
+  section?: string;
+  /** Page of `section`. Default: the surrounding section's page, else the open page. */
+  page?: string;
   children: React.ReactNode;
 }
 
@@ -203,27 +211,69 @@ const FieldFrame: React.FC<FieldFrameProps> = ({ path, name, isEditMode, onOpen,
   );
 };
 
-const SectionField: React.FC<Omit<CmsFieldProps, 'collection' | 'item'>> = ({ path, label, children }) => {
-  const section = useContext(CmsSectionContext);
+const SectionField: React.FC<Omit<CmsFieldProps, 'collection' | 'item'>> = ({ path, label, section: sectionProp, page, children }) => {
+  const surrounding = useContext(CmsSectionContext);
   const name = label ?? labelFromPath(path);
 
   useEffect(() => {
-    if (!section && new URLSearchParams(window.location.search).has(EDIT_MODE_PARAM)) {
+    if (!surrounding && !sectionProp && new URLSearchParams(window.location.search).has(EDIT_MODE_PARAM)) {
       console.warn(`[storio-editor] <CmsField path="${path}"> must be placed inside a <CmsSection>, or given collection and item.`);
     }
-  }, [section, path]);
+  }, [surrounding, sectionProp, path]);
 
-  if (!section) return <>{children}</>;
+  if (sectionProp) {
+    return (
+      <OtherSectionField path={path} name={name} sectionKey={sectionProp} page={page}>
+        {children}
+      </OtherSectionField>
+    );
+  }
+  if (!surrounding) return <>{children}</>;
+  const targetPage = page ?? surrounding.page;
   return (
     <FieldFrame
       path={path}
       name={name}
-      isEditMode={section.isEditMode}
+      isEditMode={surrounding.isEditMode}
       onOpen={() =>
         postCmsMessage(
           window.parent,
-          { type: CMS_MESSAGE.EDIT_SECTION, sectionKey: section.sectionKey, title: name, fieldPath: path },
-          section.origins
+          {
+            type: CMS_MESSAGE.EDIT_SECTION,
+            sectionKey: surrounding.sectionKey,
+            ...(targetPage ? { page: targetPage } : {}),
+            title: name,
+            fieldPath: path,
+          },
+          surrounding.origins
+        )
+      }
+    >
+      {children}
+    </FieldFrame>
+  );
+};
+
+/** A field that names its own section, so it works outside (or inside another) <CmsSection>. */
+const OtherSectionField: React.FC<{ path: string; name: string; sectionKey: string; page?: string; children: React.ReactNode }> = ({
+  path,
+  name,
+  sectionKey,
+  page,
+  children,
+}) => {
+  const { origins } = useCmsContext();
+  const isEditMode = useCmsEditMode(origins);
+  return (
+    <FieldFrame
+      path={path}
+      name={name}
+      isEditMode={isEditMode}
+      onOpen={() =>
+        postCmsMessage(
+          window.parent,
+          { type: CMS_MESSAGE.EDIT_SECTION, sectionKey, ...(page ? { page } : {}), title: name, fieldPath: path },
+          origins
         )
       }
     >

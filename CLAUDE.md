@@ -22,6 +22,7 @@ Visual editor for Next.js sites (`@brainicon/storio-elements-editor`) plus a Dja
 - The studio shows the real site in an iframe and talks to it with `postMessage` (`CMS_EDIT_SECTION`, `CMS_DRAFT_PREVIEW`, `CMS_CONTENT_UPDATED`, `CMS_ITEM_DRAFT`).
 - `[slug]` and `[id]` pages: a page with `collection` and a bracket route gets a second menu. Records are loaded and saved through `collections` of `createCmsRouteHandler`, or `COLLECTIONS` in Django. They go to the site's own database, not to section JSON. The slug is the record id and is not editable.
 - `icons` in `defineCms`: the icon picker offers exactly these, so a picked icon always renders on the site.
+- Site-wide content: one page with `global: true` (usually key `site`) holds the header, footer, contact, SEO defaults and theme. It is stored like any other page. The studio adds its sections to every page under "Site-wide" and picks the right page for save and preview (`resolveSectionPage`). Section keys may not appear on both a normal page and the global page. The site reads it with `useSiteContent`, `<CmsThemeStyle>` and `getSiteMetadata`.
 
 ## Not yet verified
 Firefox and Safari. The Django `COLLECTIONS` flow against a real model in a browser (unit tests only). The full AI-prompt flow on a real Django project.

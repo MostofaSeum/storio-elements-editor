@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { CmsConfig, CmsStorageAdapter } from '../core/types';
-import { findPage } from '../core/defineCms';
+import { findGlobalPage, findPage } from '../core/defineCms';
 import { mergePageContent } from '../core/merge';
 
 /** Shape of the optional "seo" section a page can define in its defaults. */
@@ -15,6 +15,16 @@ export interface PageSeoConfig {
   twitterCard?: 'summary' | 'summary_large_image';
   /** e.g. "index, follow" or "noindex, nofollow". */
   robots?: string;
+}
+
+/** Shape of the optional "seo" section of the global page: site-wide defaults. */
+export interface SiteSeoConfig extends PageSeoConfig {
+  /** Site name, e.g. "Brainicon". Used for og:site_name and as the title when a page has none. */
+  siteName?: string;
+  /** Title of every page, with %s for the page title, e.g. "%s | Brainicon". */
+  titleTemplate?: string;
+  /** Favicon URL, e.g. "/favicon.ico". */
+  favicon?: string;
 }
 
 /**
@@ -94,12 +104,75 @@ export function buildPageMetadata(content: { seo?: PageSeoConfig } | Record<stri
   };
 }
 
-/** Convenience for `generateMetadata`: load the page and build its metadata. */
+/**
+ * Build the site-wide metadata for the root layout from the global page's "seo" section:
+ * a title template, the default description and share image, og:site_name and the favicon.
+ */
+export function buildSiteMetadata(seo: SiteSeoConfig | undefined, fallback: Metadata = {}): Metadata {
+  if (!seo || typeof seo !== 'object') return fallback;
+  const page = buildPageMetadata({ seo }, fallback);
+  const defaultTitle = seo.title || seo.siteName || (typeof fallback.title === 'string' ? fallback.title : undefined);
+  const template = seo.titleTemplate && seo.titleTemplate.includes('%s') ? seo.titleTemplate : undefined;
+  return {
+    ...page,
+    title: template && defaultTitle ? { default: defaultTitle, template } : defaultTitle ?? fallback.title,
+    openGraph: {
+      ...page.openGraph,
+      title: seo.ogTitle || defaultTitle,
+      siteName: seo.siteName || (fallback.openGraph?.siteName as string | undefined),
+    },
+    twitter: { ...page.twitter, title: seo.ogTitle || defaultTitle },
+    icons: seo.favicon ? { icon: seo.favicon } : fallback.icons,
+  };
+}
+
+/**
+ * For `generateMetadata` in the root layout: the site-wide metadata from the global page
+ * (the page with `global: true`). Without a global page it returns `fallback`.
+ */
+export async function getSiteMetadata(
+  config: Pick<CmsConfig, 'pages'>,
+  options: { storage: CmsStorageAdapter; fallback?: Metadata; section?: string }
+): Promise<Metadata> {
+  const globalPage = findGlobalPage(config);
+  if (!globalPage) return options.fallback ?? {};
+  const content = await getPageContent<Record<string, unknown>>(config, globalPage.key, { storage: options.storage });
+  return buildSiteMetadata(content[options.section ?? 'seo'] as SiteSeoConfig | undefined, options.fallback);
+}
+
+/**
+ * Convenience for `generateMetadata`: load the page and build its metadata. When the config has
+ * a global page, its "seo" section fills what the page leaves empty (description, share image),
+ * so a page without SEO of its own still gets the site defaults. Pass `site: false` to skip that.
+ */
 export async function getPageMetadata(
   config: Pick<CmsConfig, 'pages'>,
   pageKey: string,
-  options: { storage: CmsStorageAdapter; fallback?: Metadata }
+  options: { storage: CmsStorageAdapter; fallback?: Metadata; site?: boolean }
 ): Promise<Metadata> {
   const content = await getPageContent<Record<string, unknown>>(config, pageKey, { storage: options.storage });
-  return buildPageMetadata(content, options.fallback);
+  let fallback = options.fallback ?? {};
+  const globalPage = options.site === false ? undefined : findGlobalPage(config);
+  if (globalPage && globalPage.key !== pageKey) {
+    const site = await getPageContent<Record<string, unknown>>(config, globalPage.key, { storage: options.storage });
+    fallback = mergeSiteFallback(site.seo as SiteSeoConfig | undefined, fallback);
+  }
+  return buildPageMetadata(content, fallback);
+}
+
+/**
+ * Site SEO under a page's own fallback. The title is left out on purpose: the root layout's
+ * title template already supplies the default title, and repeating it would show it twice.
+ */
+function mergeSiteFallback(seo: SiteSeoConfig | undefined, fallback: Metadata): Metadata {
+  if (!seo || typeof seo !== 'object') return fallback;
+  const { title: _title, ogTitle: _ogTitle, canonical: _canonical, ...rest } = seo;
+  const site = buildSiteMetadata({ ...rest, title: undefined }, {});
+  return {
+    ...site,
+    title: undefined,
+    ...fallback,
+    openGraph: { ...site.openGraph, title: undefined, url: undefined, ...fallback.openGraph },
+    twitter: { ...site.twitter, title: undefined, ...fallback.twitter },
+  };
 }

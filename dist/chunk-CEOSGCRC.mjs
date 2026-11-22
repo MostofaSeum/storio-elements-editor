@@ -35,6 +35,28 @@ function defineCms(config) {
       sectionKeys.add(section.key);
     }
   }
+  const globalPages = config.pages.filter((p) => p.global);
+  if (globalPages.length > 1) {
+    throw new Error(
+      `[storio-editor] Only one page may have global: true (found ${globalPages.map((p) => `"${p.key}"`).join(", ")}).`
+    );
+  }
+  const globalPage = globalPages[0];
+  if (globalPage) {
+    if (globalPage.collection || globalPage.parent) {
+      throw new Error(`[storio-editor] The global page "${globalPage.key}" cannot have a collection or a parent.`);
+    }
+    const globalKeys = new Set(globalPage.sections.map((s) => s.key));
+    for (const page of config.pages) {
+      if (page === globalPage) continue;
+      const clash = page.sections.find((s) => globalKeys.has(s.key));
+      if (clash) {
+        throw new Error(
+          `[storio-editor] Section "${clash.key}" is on page "${page.key}" and on the global page "${globalPage.key}". Rename one, so the studio knows which one a click means.`
+        );
+      }
+    }
+  }
   for (const page of config.pages) {
     if (!page.parent) continue;
     const parent = config.pages.find((p) => p.key === page.parent);
@@ -47,6 +69,16 @@ function defineCms(config) {
     }
   }
   return config;
+}
+function findGlobalPage(config) {
+  return config.pages.find((p) => p.global);
+}
+function resolveSectionPage(config, currentPage, sectionKey, requestedPage) {
+  const has = (key) => !!key && !!findPage(config, key)?.sections.some((s) => s.key === sectionKey);
+  if (requestedPage) return has(requestedPage) ? requestedPage : void 0;
+  if (has(currentPage)) return currentPage;
+  const globalPage = findGlobalPage(config);
+  return globalPage && has(globalPage.key) ? globalPage.key : void 0;
 }
 function findPage(config, pageKey) {
   return config.pages.find((p) => p.key === pageKey);
@@ -176,6 +208,8 @@ function listenForCmsMessages(handler, options) {
 export {
   isValidKey,
   defineCms,
+  findGlobalPage,
+  resolveSectionPage,
   findPage,
   mergePageContent,
   getSectionKeys,

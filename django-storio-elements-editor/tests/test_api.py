@@ -90,6 +90,15 @@ class ApiTests(TestCase):
         self.assertEqual(self.put(self.editor, "blog", "hero", {}).status_code, 404)
         self.assertEqual(self.put(self.editor, "home", "hero", {}).status_code, 200)
 
+    @override_settings(STORIO_EDITOR={"ALLOWED_PAGES": ["home", "site"]})
+    def test_global_site_page_is_an_ordinary_page_key(self):
+        # Site-wide content (header, footer, theme) is saved under the global page's key.
+        self.assertEqual(self.put(self.editor, "site", "header", {"logoText": "Acme"}).status_code, 200)
+        self.assertEqual(self.put(self.editor, "site", "theme", {"primaryColor": "#7c3aed"}).status_code, 200)
+        records = self.anon.get(f"{BASE}/records?page=site").json()
+        self.assertEqual({r["sectionKey"] for r in records}, {"header", "theme"})
+        self.assertEqual(len(self.anon.get(f"{BASE}/records?page=home").json()), 0)
+
     @override_settings(VISUAL_CMS={"ALLOWED_PAGES": ["home"]})
     def test_settings_name_from_before_the_rename_still_works(self):
         self.assertEqual(self.put(self.editor, "blog", "hero", {}).status_code, 404)

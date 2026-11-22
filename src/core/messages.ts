@@ -26,6 +26,8 @@ export type CmsMessage =
   | {
       type: typeof CMS_MESSAGE.EDIT_SECTION;
       sectionKey: string;
+      /** Page the section belongs to, e.g. the global page for a navbar. Default: the open page. */
+      page?: string;
       title?: string;
       fieldPath?: string;
       /** Set when the field belongs to a collection record instead of a section. */

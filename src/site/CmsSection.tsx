@@ -10,6 +10,12 @@ export interface CmsSectionProps {
   sectionKey: string;
   title: string;
   /**
+   * Page this section's content belongs to. Set it to the key of your global page for
+   * site-wide parts such as the navbar or footer, so they can be edited from every page.
+   * Default: the page open in the studio (a global section is still found without it).
+   */
+  page?: string;
+  /**
    * Optional pathname (for example "/") that this section belongs to.
    * Shared components such as a navbar render on every page, so without this
    * guard their edit button would appear on pages that do not own the section.
@@ -49,6 +55,7 @@ const BUTTON_HEIGHT = 56;
 export const CmsSection: React.FC<CmsSectionProps> = ({
   sectionKey,
   title,
+  page,
   activeOnPath,
   buttonPlacement = 'inside',
   children,
@@ -74,9 +81,9 @@ export const CmsSection: React.FC<CmsSectionProps> = ({
   const isValidPath = !activeOnPath || pathname === activeOnPath;
   const showButton = isEditMode && isValidPath && (isSectionHovered || isTargeted);
   const sectionContext = useMemo(
-    () => ({ sectionKey, isEditMode: isEditMode && isValidPath, origins }),
+    () => ({ sectionKey, page, isEditMode: isEditMode && isValidPath, origins }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sectionKey, isEditMode, isValidPath, originsKey]
+    [sectionKey, page, isEditMode, isValidPath, originsKey]
   );
 
   // Listen for scroll commands from the studio
@@ -145,6 +152,7 @@ export const CmsSection: React.FC<CmsSectionProps> = ({
         {
           type: CMS_MESSAGE.EDIT_SECTION,
           sectionKey,
+          ...(page ? { page } : {}),
           title,
         },
         origins

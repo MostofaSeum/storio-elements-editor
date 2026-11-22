@@ -1,4 +1,6 @@
-export { CmsProvider, usePageContent, useCmsConfig } from './CmsProvider';
+export { CmsProvider, usePageContent, useSiteContent, useCmsConfig } from './CmsProvider';
+export { CmsThemeStyle } from './CmsThemeStyle';
+export type { CmsThemeStyleProps } from './CmsThemeStyle';
 export type { CmsProviderProps } from './CmsProvider';
 export { CmsSection } from './CmsSection';
 export type { CmsSectionProps } from './CmsSection';

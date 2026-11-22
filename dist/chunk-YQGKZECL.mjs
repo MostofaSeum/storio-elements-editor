@@ -1,6 +1,16 @@
 "use client";
 
 // src/core/defineCms.ts
+function findGlobalPage(config) {
+  return config.pages.find((p) => p.global);
+}
+function resolveSectionPage(config, currentPage, sectionKey, requestedPage) {
+  const has = (key) => !!key && !!findPage(config, key)?.sections.some((s) => s.key === sectionKey);
+  if (requestedPage) return has(requestedPage) ? requestedPage : void 0;
+  if (has(currentPage)) return currentPage;
+  const globalPage = findGlobalPage(config);
+  return globalPage && has(globalPage.key) ? globalPage.key : void 0;
+}
 function findPage(config, pageKey) {
   return config.pages.find((p) => p.key === pageKey);
 }
@@ -100,6 +110,42 @@ function listenForCmsMessages(handler, options) {
   return () => window.removeEventListener("message", listener);
 }
 
+// src/core/theme.ts
+function themeToCssVariables(theme, options = {}) {
+  const prefix = options.prefix ?? "--";
+  const out = {};
+  const walk = (value, name) => {
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).trim();
+      if (!text || /[;{}<>\\\r\n]/.test(text)) return;
+      const key = name.map(toKebab).filter(Boolean).join("-");
+      if (/^[a-z0-9-]+$/.test(key)) out[prefix + key] = text;
+      return;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      for (const [key, inner] of Object.entries(value)) walk(inner, [...name, key]);
+    }
+  };
+  walk(theme, []);
+  return out;
+}
+function themeToCss(theme, options = {}) {
+  const vars = themeToCssVariables(theme, options);
+  const body = Object.entries(vars).map(([key, value]) => `${key}:${value};`).join("");
+  return body ? `${options.selector ?? ":root"}{${body}}` : "";
+}
+function toKebab(part) {
+  return part.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[_\s]+/g, "-").toLowerCase();
+}
+function isColorField(fieldName, value) {
+  if (typeof value !== "string") return false;
+  if (/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value.trim())) return true;
+  return /colou?r$/i.test(fieldName) && (value === "" || /^#/.test(value.trim()));
+}
+function isFontField(fieldName, value, fonts) {
+  return !!fonts?.length && typeof value === "string" && /font$/i.test(fieldName);
+}
+
 // src/core/paths.ts
 function parseFieldPath(path) {
   return path.split(".").map((part) => /^\d+$/.test(part) ? Number(part) : part);
@@ -127,6 +173,8 @@ function buildPreviewUrl(route, options = {}) {
 }
 
 export {
+  findGlobalPage,
+  resolveSectionPage,
   findPage,
   mergePageContent,
   getSectionDetail,
@@ -137,6 +185,9 @@ export {
   trustedOrigins,
   postCmsMessage,
   listenForCmsMessages,
+  themeToCss,
+  isColorField,
+  isFontField,
   parseFieldPath,
   getAtPath,
   publicUrl,

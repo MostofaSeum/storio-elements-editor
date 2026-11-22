@@ -40,6 +40,13 @@ interface PageDef {
      * page's records in a second menu next to the parent page instead of in the page menu.
      */
     parent?: string;
+    /**
+     * Site-wide content: header, footer, contact details, SEO defaults, theme. The sections of a
+     * global page can be edited from every page in the studio and read on every page of the site
+     * (`useSiteContent`). Its `route` is only the page shown while "Site settings" is open.
+     * At most one page may be global.
+     */
+    global?: boolean;
     icon?: IconComponent;
     /** Editable sections, in the order they appear in the studio. */
     sections: SectionDef[];
@@ -162,6 +169,11 @@ interface CmsConfig {
      */
     icons?: Record<string, IconComponent>;
     /**
+     * Font names your site already loads (for example with next/font). A field whose name ends in
+     * "font" (e.g. "headingFont") then offers exactly these in a list.
+     */
+    fonts?: string[];
+    /**
      * Item limits for array fields. Keys are tried in this order:
      * "page.section.path", "page.path", "section.path", "page.section".
      */
@@ -170,5 +182,18 @@ interface CmsConfig {
     imagePresetCategories?: ImagePresetCategory[];
     widgets?: CmsWidgets;
 }
+/** Metadata about a section that has a saved record (see listManagedSections). */
+interface SectionMetadata {
+    page: string;
+    sectionKey: string;
+    hasCustomOverride: boolean;
+    isPublished: boolean;
+    updatedAt: string | null;
+    updatedBy: string | null;
+}
+/** One section's current content plus its override status. */
+interface SectionDetail<T = unknown> extends SectionMetadata {
+    content: T;
+}
 
-export type { CmsConfig as C, IconComponent as I };
+export type { CmsStorageAdapter as C, IconComponent as I, ListOptions as L, MediaItem as M, PageDef as P, SectionRecord as S, CmsConfig as a, SectionDetail as b, SectionMetadata as c, CollectionItemSummary as d, CmsWidgets as e, CodeValue as f, CodeWidgetProps as g, CollectionLimit as h, ImagePreset as i, ImagePresetCategory as j, SaveRecordInput as k, SectionDef as l };

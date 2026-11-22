@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { CmsConfig } from '../core/types';
-import { findPage } from '../core/defineCms';
+import { findGlobalPage, findPage } from '../core/defineCms';
 import { mergePageContent } from '../core/merge';
 import { CMS_MESSAGE, listenForCmsMessages, trustedOrigins } from '../core/messages';
 import { isCmsPreview } from './preview';
@@ -125,4 +125,17 @@ export function usePageContent<T = Record<string, any>>(
   }, [pageKey, config.adapter, originsKey]);
 
   return content;
+}
+
+/**
+ * Live content of the global page (the one with `global: true`): header, footer, contact details,
+ * SEO defaults, theme. Works on every page, and follows the editor's typing in the studio preview.
+ */
+export function useSiteContent<T = Record<string, any>>(options: { initialData?: T } = {}): T {
+  const { config } = useCmsContext();
+  const globalPage = findGlobalPage(config);
+  if (!globalPage) {
+    throw new Error('[storio-editor] useSiteContent needs a page with global: true in the "pages" array of your CMS config.');
+  }
+  return usePageContent<T>(globalPage.key, options);
 }

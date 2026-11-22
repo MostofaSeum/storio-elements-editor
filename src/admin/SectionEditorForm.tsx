@@ -6,6 +6,7 @@ import {
 import toast from 'react-hot-toast';
 import type { CodeValue } from '../core/types';
 import { getAtPath, parseFieldPath } from '../core/paths';
+import { isColorField, isFontField } from '../core/theme';
 import { JsonInspectorModal } from './JsonInspectorModal';
 import { LivePreviewModal } from './LivePreviewModal';
 import { VisualImagePicker } from './VisualImagePicker';
@@ -290,6 +291,8 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
 
   const isIconField = (fieldName: string): boolean => {
     const lower = fieldName.toLowerCase();
+    // A favicon is an image file, not a picked icon.
+    if (lower.endsWith('favicon') || /colou?r$/.test(lower)) return false;
     return (
       lower === 'icon' ||
       lower.endsWith('icon') ||
@@ -315,7 +318,7 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
 
     const imageKeyKeywords = [
       'image', 'img', 'avatar', 'logo', 'photo', 
-      'banner', 'cover', 'thumbnail', 'preview', 'picture', 'src', 'ogimage'
+      'banner', 'cover', 'thumbnail', 'preview', 'picture', 'src', 'ogimage', 'favicon'
     ];
     const hasImageKey = imageKeyKeywords.some((kw) => lowerKey.includes(kw));
     const trimmed = val.trim();
@@ -358,6 +361,70 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
               fieldId={fieldId}
               icons={config.icons}
             />
+          </div>
+        );
+      }
+
+      if (isColorField(key, value)) {
+        const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value.trim());
+        // <input type="color"> only takes #rrggbb.
+        const pickerValue = isHex
+          ? value.trim().length === 4
+            ? `#${value.trim().slice(1).split('').map((c) => c + c).join('')}`
+            : value.trim()
+          : '#000000';
+        return (
+          <div key={fieldId} className="w-full space-y-1 py-1">
+            <div className="flex items-center justify-between gap-1">
+              <label htmlFor={`${fieldId}-color`} className="text-xs font-semibold text-slate-200 capitalize">
+                {key.replace(/([A-Z])/g, ' $1')}
+              </label>
+              <span className="text-[10px] font-mono text-slate-500">{fieldId}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id={`${fieldId}-color`}
+                type="color"
+                value={pickerValue}
+                onChange={(e) => handleFieldChange(path, e.target.value)}
+                className="h-9 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-700 bg-slate-950/90 p-1"
+              />
+              <input
+                type="text"
+                value={value}
+                aria-label={`${key} hex value`}
+                placeholder="#7c3aed"
+                onChange={(e) => handleFieldChange(path, e.target.value)}
+                className="w-full text-xs px-3 py-2 font-mono rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors"
+              />
+            </div>
+          </div>
+        );
+      }
+
+      if (isFontField(key, value, config.fonts)) {
+        const fonts = config.fonts ?? [];
+        return (
+          <div key={fieldId} className="w-full space-y-1 py-1">
+            <div className="flex items-center justify-between gap-1">
+              <label htmlFor={`${fieldId}-font`} className="text-xs font-semibold text-slate-200 capitalize">
+                {key.replace(/([A-Z])/g, ' $1')}
+              </label>
+              <span className="text-[10px] font-mono text-slate-500">{fieldId}</span>
+            </div>
+            <select
+              id={`${fieldId}-font`}
+              value={value}
+              onChange={(e) => handleFieldChange(path, e.target.value)}
+              className="w-full text-xs px-3 py-2 rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors"
+            >
+              {!fonts.includes(value) && <option value={value}>{value || 'Choose a font'}</option>}
+              {fonts.map((font) => (
+                <option key={font} value={font} style={{ fontFamily: font }}>
+                  {font}
+                </option>
+              ))}
+            </select>
           </div>
         );
       }

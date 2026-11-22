@@ -14,10 +14,11 @@ import {
   Pencil,
   Eye,
   Database,
+  Globe,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { CollectionItemSummary, PageDef, SectionDef, SectionDetail } from '../core/types';
-import { findPage } from '../core/defineCms';
+import { findGlobalPage, findPage, resolveSectionPage } from '../core/defineCms';
 import { fillRoute, groupPageOf, isDynamicRoute, recordPagesOf, topLevelPages } from '../core/collections';
 import { getSectionDetail } from '../core/merge';
 import { CMS_MESSAGE, listenForCmsMessages, postCmsMessage } from '../core/messages';
@@ -89,12 +90,19 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   const [isLoadingRecord, setIsLoadingRecord] = useState(false);
   const [recordTarget, setRecordTarget] = useState<RecordTarget | null>(null);
   const isRecordOpen = Boolean(recordTarget);
+  // Site-wide sections (header, footer, theme...) are offered on every page, after the page's own.
+  const globalPage = findGlobalPage(config);
+  const globalSections: SectionDef[] = React.useMemo(
+    () => (globalPage && globalPage.key !== activePage ? globalPage.sections : []),
+    [globalPage, activePage]
+  );
   const availableSections: SectionDef[] = React.useMemo(() => {
-    const sections = pageDef?.sections ?? [];
+    const sections = [...(pageDef?.sections ?? []), ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
     return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: Database }, ...sections];
-  }, [pageDef, recordTarget, config.pages]);
+  }, [pageDef, globalSections, recordTarget, config.pages]);
+  const pageSections = availableSections.filter((s) => !globalSections.includes(s));
   const [activeSectionKey, setActiveSectionKey] = useState<string>(availableSections[0]?.key ?? '');
   // The single field opened with its own pencil. Null shows the whole section.
   const [activeFieldPath, setActiveFieldPath] = useState<string | null>(null);
@@ -110,6 +118,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   // The section list starts folded so the form gets the room; the header opens it.
   const [isSectionListOpen, setIsSectionListOpen] = useState(false);
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
+  // The page that stores the open section: the open page, or the global page for a site-wide section.
+  const sectionPageDef: PageDef | undefined =
+    globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
+  const sectionPage = sectionPageDef?.key ?? activePage;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const viewportContainerRef = useRef<HTMLDivElement>(null);
@@ -333,13 +345,13 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
   );
 
   useEffect(() => {
-    if (!pageDef) return;
+    if (!sectionPageDef) return;
     const isSectionValid = availableSections.some((section) => section.key === activeSectionKey);
     if (activeSectionKey && isSectionValid && activeSectionKey !== RECORD_SECTION) {
-      loadSectionData(pageDef, activeSectionKey);
+      loadSectionData(sectionPageDef, activeSectionKey);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePage, activeSectionKey, loadSectionData]);
+  }, [activePage, sectionPage, activeSectionKey, loadSectionData]);
 
   // Two-way interaction: select a section on the left -> scroll the preview to it
   const handleSelectSection = (sectionKey: string) => {
@@ -376,8 +388,13 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
           return;
         }
         if (!message.sectionKey) return;
-        if (!availableSections.some((s) => s.key === message.sectionKey)) {
-          toast.error(`Section '${message.sectionKey}' is not configured for this page`);
+        const ownerPage = resolveSectionPage(config, activePage, message.sectionKey, message.page);
+        if (!ownerPage || !availableSections.some((s) => s.key === message.sectionKey)) {
+          toast.error(
+            message.page && message.page !== activePage
+              ? `Section '${message.sectionKey}' belongs to the page '${message.page}'. Open that page to edit it.`
+              : `Section '${message.sectionKey}' is not configured for this page`
+          );
           return;
         }
         if (message.sectionKey !== activeSectionRef.current && !confirmLeavingSection()) return;
@@ -389,40 +406,40 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
       },
       { origins, source: () => iframeRef.current?.contentWindow }
     );
-  }, [origins, availableSections, confirmLeavingSection]);
+  }, [origins, availableSections, confirmLeavingSection, config, activePage]);
 
   // Save handler for the left editor panel.
   // Errors are re-thrown so SectionEditorForm shows a single toast.
   const handleSaveSection = async (content: unknown, isPublished: boolean) => {
-    if (!pageDef) return;
-    await adapter.saveRecord({ page: activePage, sectionKey: activeSectionKey, content, isPublished });
+    if (!sectionPageDef) return;
+    await adapter.saveRecord({ page: sectionPage, sectionKey: activeSectionKey, content, isPublished });
 
     // Update the preview immediately, then have it refetch from storage
     sendToPreview({
       type: CMS_MESSAGE.DRAFT_PREVIEW,
-      page: activePage,
+      page: sectionPage,
       sectionKey: activeSectionKey,
       draftContent: content,
     });
     sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
 
-    const record = await adapter.getRecord(activePage, activeSectionKey, { includeDrafts: true });
-    setSectionDetail(getSectionDetail(pageDef, activeSectionKey, record));
+    const record = await adapter.getRecord(sectionPage, activeSectionKey, { includeDrafts: true });
+    setSectionDetail(getSectionDetail(sectionPageDef, activeSectionKey, record));
   };
 
   // Reset handler for the left editor panel.
   const handleResetSection = async () => {
-    if (!pageDef) return;
-    await adapter.deleteRecord(activePage, activeSectionKey);
+    if (!sectionPageDef) return;
+    await adapter.deleteRecord(sectionPage, activeSectionKey);
     sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
-    setSectionDetail(getSectionDetail(pageDef, activeSectionKey, null));
+    setSectionDetail(getSectionDetail(sectionPageDef, activeSectionKey, null));
   };
 
   // Real-time draft preview: sends live form edits into the preview without saving
   const handleDraftChange = (draftContent: unknown) => {
     sendToPreview({
       type: CMS_MESSAGE.DRAFT_PREVIEW,
-      page: activePage,
+      page: sectionPage,
       sectionKey: activeSectionKey,
       draftContent,
     });
@@ -485,11 +502,14 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
               aria-label="Page to edit"
               className="text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-200 focus:outline-none focus:border-purple-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate"
             >
-              {topLevelPages(config).map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.title} ({p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, '') || '/' : p.route})
-                </option>
-              ))}
+              {topLevelPages(config)
+                .filter((p) => !p.global)
+                .map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.title} ({p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, '') || '/' : p.route})
+                  </option>
+                ))}
+              {globalPage && <option value={globalPage.key}>{globalPage.title || 'Site settings'} (every page)</option>}
             </select>
           )}
 
@@ -647,26 +667,38 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
             <>
             {/* Section switcher pills */}
             <div id="cms-section-list" className="flex flex-wrap gap-1.5">
-              {availableSections.map((sec) => {
-                const isSelected = sec.key === activeSectionKey;
-                const IconComponent = sec.icon;
-                return (
-                  <button
-                    key={sec.key}
-                    type="button"
-                    onClick={() => handleSelectSection(sec.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                      isSelected
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400'
-                        : 'bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800'
-                    }`}
-                  >
-                    {IconComponent && <IconComponent className="w-3.5 h-3.5 opacity-80" />}
-                    <span>{sec.label}</span>
-                    {isSelected && <ChevronRight className="w-3 h-3 text-purple-200" />}
-                  </button>
-                );
-              })}
+              {[pageSections, globalSections].map((list, index) =>
+                list.length === 0 ? null : (
+                  <React.Fragment key={index}>
+                    {index === 1 && (
+                      <div className="w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                        <Globe className="w-3 h-3" />
+                        <span>Site-wide: shown on every page</span>
+                      </div>
+                    )}
+                    {list.map((sec) => {
+                      const isSelected = sec.key === activeSectionKey;
+                      const IconComponent = sec.icon;
+                      return (
+                        <button
+                          key={sec.key}
+                          type="button"
+                          onClick={() => handleSelectSection(sec.key)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                            isSelected
+                              ? 'bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400'
+                              : 'bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800'
+                          }`}
+                        >
+                          {IconComponent && <IconComponent className="w-3.5 h-3.5 opacity-80" />}
+                          <span>{sec.label}</span>
+                          {isSelected && <ChevronRight className="w-3 h-3 text-purple-200" />}
+                        </button>
+                      );
+                    })}
+                  </React.Fragment>
+                )
+              )}
             </div>
 
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
@@ -714,9 +746,9 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialPage, onPageC
                 <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
                 <span>Loading section form...</span>
               </div>
-            ) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === activePage ? (
+            ) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? (
               <SectionEditorForm
-                page={activePage}
+                page={sectionPage}
                 sectionKey={activeSectionKey}
                 sectionLabel={activeSectionDef?.label}
                 pagePath={currentRoute}

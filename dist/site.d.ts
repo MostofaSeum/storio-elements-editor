@@ -1,5 +1,5 @@
 import React from 'react';
-import { C as CmsConfig, I as IconComponent } from './types-BQH8Zo3g.js';
+import { C as CmsConfig, I as IconComponent } from './types-DTr7JArh.js';
 
 interface CmsProviderProps {
     config: CmsConfig;
@@ -22,10 +22,39 @@ declare function usePageContent<T = Record<string, any>>(pageKey: string, option
     /** Content loaded on the server for this page (e.g. with `getPageContent`). */
     initialData?: T;
 }): T;
+/**
+ * Live content of the global page (the one with `global: true`): header, footer, contact details,
+ * SEO defaults, theme. Works on every page, and follows the editor's typing in the studio preview.
+ */
+declare function useSiteContent<T = Record<string, any>>(options?: {
+    initialData?: T;
+}): T;
+
+interface CmsThemeStyleProps {
+    /** Section of the global page that holds the theme. Default: "theme". */
+    section?: string;
+    /** Start of every variable name. Default: "--", so primaryColor becomes --primary-color. */
+    prefix?: string;
+    /** Where the variables apply. Default: ":root". */
+    selector?: string;
+}
+/**
+ * Writes the theme section of the global page as CSS variables, for example
+ * `:root{--primary-color:#7c3aed;--heading-font:Inter;}`. Put it once in the root layout, inside
+ * <CmsProvider>, and use the variables in your CSS. Colour changes show in the studio preview as
+ * the editor picks them.
+ */
+declare const CmsThemeStyle: React.FC<CmsThemeStyleProps>;
 
 interface CmsSectionProps {
     sectionKey: string;
     title: string;
+    /**
+     * Page this section's content belongs to. Set it to the key of your global page for
+     * site-wide parts such as the navbar or footer, so they can be edited from every page.
+     * Default: the page open in the studio (a global section is still found without it).
+     */
+    page?: string;
     /**
      * Optional pathname (for example "/") that this section belongs to.
      * Shared components such as a navbar render on every page, so without this
@@ -70,6 +99,14 @@ interface CmsFieldProps {
     collection?: string;
     /** The record's id, the same id your collection handler's `get` and `save` receive. */
     item?: string | number;
+    /**
+     * Edit a value of another section than the surrounding one, or a value shown outside any
+     * <CmsSection>: for example the site phone number from the global page inside the contact page.
+     * Use with `page` (the global page's key) when the section is not on the open page.
+     */
+    section?: string;
+    /** Page of `section`. Default: the surrounding section's page, else the open page. */
+    page?: string;
     children: React.ReactNode;
 }
 /**
@@ -115,4 +152,4 @@ declare function isCmsPreview(): boolean;
  */
 declare function useCmsEditMode(origins: string[]): boolean;
 
-export { CmsField, type CmsFieldProps, CmsIcon, type CmsIconProps, CmsProvider, type CmsProviderProps, CmsSection, type CmsSectionProps, isCmsPreview, useCmsConfig, useCmsEditMode, useCollectionItem, usePageContent };
+export { CmsField, type CmsFieldProps, CmsIcon, type CmsIconProps, CmsProvider, type CmsProviderProps, CmsSection, type CmsSectionProps, CmsThemeStyle, type CmsThemeStyleProps, isCmsPreview, useCmsConfig, useCmsEditMode, useCollectionItem, usePageContent, useSiteContent };

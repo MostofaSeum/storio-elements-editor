@@ -32,7 +32,7 @@ Safety rules (most important):
 
 Steps:
 1. Check the project: Next.js App Router (app/ or src/app/), TypeScript, Tailwind CSS v4, Node 18.18+. Find the admin panel (folders like admin, dashboard, or a route group like (admin)), and find out whether there is a Django backend (a folder with manage.py). Then list every page file under app/ or src/app/ (page.tsx, page.jsx or page.js) that visitors open, leaving out the admin area, api/, login and other auth pages, the CMS screen, and error or not-found pages. Write the list down with each page's URL: every page on it must be made editable in step 5. If package.json already lists @brainicon/visual-cms (the old name of this library), follow the README section "Upgrading from @brainicon/visual-cms" instead of steps 2 and 3, then continue with step 4.
-2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.1.0   then check: npx storio-editor --version
+2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.2.0   then check: npx storio-editor --version
 3. Set it up with `npx storio-editor init --yes --no-example` (--no-example: this is a real project, so do not create the demo page at /cms-example):
    - with Django: add --django-dir <folder with manage.py> (and --api-url / --frontend-origin if the ports are not 8000 / 3000). This also sets up Django: package, settings, urls, CORS, migration.
    - if the admin panel lives under app/, add --admin-path "<admin folder>/cms" so the CMS screen sits behind the admin login.
@@ -44,7 +44,8 @@ Steps:
    - Dynamic routes ([slug], [id]) show one database record at a time (a blog post, a product). Follow the README section "Pages with [slug] or [id]": add a collection for that data to the CMS API route (list, get and save, written with the project's own data functions, refreshing the page's cache after a save; with Django add it to STORIO_EDITOR["COLLECTIONS"] instead), scan the template with --route <the route with brackets> --collection <key> --page <key> (add --parent <list page key> when a list page exists), and wrap each visible record field in <CmsField collection="<key>" item={<record id>} path="<field>">, also on the list page (for example each post title). Fixed text of the template (headings, labels, buttons) stays page content.
    - Review the change with git diff and run the type check. The page must render exactly as before.
    - Required: every small item gets its own pencil. Go through the page from top to bottom. Every visible title, subtitle, paragraph, button or link label, image, logo, icon, and every field of a repeated card or list item must be wrapped in its own <CmsField>. Scan already does this for static text. For everything it did not move (images, icons, text kept in constants or arrays), add the current value to that section in content/<page>.json, read it with usePageContent, and wrap the element in <CmsField path="<key inside that section>" label="<short name>"> inside its <CmsSection>. Use dots and the list position for repeated items (items.0.title, or items.${index}.title inside .map()). For an icon, store its name in the JSON and list every icon the site may show in `icons: { ... }` of defineCms in cms.config.ts (reuse the site's own icon list or registry if it has one), so the icon picker offers exactly the icons the site can draw; draw it with the site's own icon component or <CmsIcon name={...} />. Put <CmsField> inside <li> and <td>, never around them. Keep the output identical.
-   - Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values, props of shared components); alt and placeholder values; and text inside <title>, <option> or <textarea>. Keep every item you skip for the final report, with the reason.
+   - Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values); alt and placeholder values; and text inside <title>, <option> or <textarea>. Keep every item you skip for the final report, with the reason.
+5b. Make the site-wide parts editable too: the navbar/header, the footer, contact details and social links that repeat on several pages, the default SEO (site name, title template, description, share image, favicon) and the brand colours. Follow the README section "Site-wide content": add one page with global: true (key "site") to cms.config.ts with the sections header, footer, contact, seo and theme, put the current values in content/site.json, read them with useSiteContent() in the shared components, wrap the navbar in <CmsSection sectionKey="header" title="Header" page="site"> and the footer the same way, give every link, label and logo its own <CmsField>, and use getSiteMetadata in the root layout. Keep the output identical.
    - Optional: where scan turned hand-written repeated cards into separate fields, you may turn them into an array in the JSON plus a .map() in the code, so editors can add and remove items. Keep the output identical.
 6. Run npx storio-editor doctor and fix every FAIL.
 7. Start the dev server and open the CMS screen. With Django the screen shows a sign-in form: sign in with a Django staff account (python manage.py createsuperuser makes one). Hover a title, an image, an icon and a list item in turn, and confirm each shows its own small pencil and opens a form with only that field. Pick an icon the page did not use before and confirm the preview shows exactly that icon. For a page with records, pick a record in the second menu and confirm its fields open as a database record. Change the title, Save & Publish, and check the public page shows it. Then reset it. Also hover an empty part of the section and confirm the larger section pencil opens the full form. Then pick every other page in the CMS page list and confirm its preview loads with pencils.
@@ -75,13 +76,13 @@ Steps:
 In your Next.js project:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.1.0
+npm install github:MostofaSeum/storio-elements-editor#v1.2.0
 ```
 
-`#v1.1.0` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
+`#v1.2.0` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
 
 ```bash
-npx storio-editor --version     # prints 1.1.0
+npx storio-editor --version     # prints 1.2.0
 ```
 
 ### Step 2. Run the setup command
@@ -301,7 +302,7 @@ Copy the prompt from [the top of this README](#let-your-ai-agent-do-it) into you
 **Step 3. Install the library.**
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.1.0
+npm install github:MostofaSeum/storio-elements-editor#v1.2.0
 npx storio-editor --version
 ```
 
@@ -331,9 +332,11 @@ Pass when the command exits with code 0 and lists created and modified files. **
 2. If it reports a Server Component: when the page has no server-only code (not `async`, no `metadata`/`generateMetadata` export, no database, `fs` or server-only imports), re-run with `--add-use-client`. Otherwise create `components/<Name>View.tsx` with `'use client'`, move the page's JSX into it (keep the server code in the page and pass data as props), render `<NameView />` from the page, and scan the new file with `--page <key> --route <url>`.
 3. Run it without `--dry-run`, then `git diff` and `npx tsc --noEmit`. The page must render the same as before. If anything is wrong, restore the file from `<file>.storio-editor.bak`, remove the page entry from `cms.config.ts` and delete `content/<key>.json`.
 4. Required: give every small item its own pencil. Every visible title, subtitle, paragraph, button or link label, image, logo, icon, and every field of a repeated card or list item must be inside its own `<CmsField>`. `scan` does this for static text. For images, icons and text kept in constants or arrays, add the current value to that section in `content/<page>.json`, read it with `usePageContent`, and wrap the element in `<CmsField path="..." label="...">` ([Edit single fields](#edit-single-fields)). For an icon, store its name and list every icon the site may show in `icons` of `defineCms` (reuse the site's own icon registry if it has one), so the picker only offers icons the site can draw; draw it with the site's own icon component or `<CmsIcon name={...} />` ([Icons](#icons)). The page must render the same as before.
-   Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values, props of shared components); `alt` and `placeholder` values; and text inside `<title>`, `<option>` or `<textarea>`. Note each skipped item and the reason for the report in Step 8.
+   Leave these without their own pencil: data that cannot be saved back (a third-party API, computed values); `alt` and `placeholder` values; and text inside `<title>`, `<option>` or `<textarea>`. Note each skipped item and the reason for the report in Step 8.
+   Shared components (navbar, footer, anything in the root layout) are not skipped: they belong to the global page. See step 7 below.
 5. Dynamic routes (`[slug]`, `[id]`) show one database record at a time. Do [Pages with [slug] or [id]](#pages-with-slug-or-id): add a collection to the CMS API route using the project's own data functions (Django: `STORIO_EDITOR["COLLECTIONS"]`), scan the template with `--route <route with brackets> --collection <key> --page <key>` (plus `--parent <list page key>` when there is a list page), and wrap each visible record field, on the record page and on the list page, in `<CmsField collection item path>`. If the data cannot be saved back (for example it comes from a third-party API), make only the fixed text editable and note why for Step 8.
 6. Optional: blocks written out by hand several times (for example four copied cards) became separate fields. You may turn them into an array in the JSON plus a `.map()` in the code, so editors can add and remove items. Keep the output identical.
+7. Site-wide parts, once for the whole site: do [Site-wide content](#site-wide-content-header-footer-seo-theme). Add a page with `global: true` (key `site`) with the sections `header`, `footer`, `contact`, `seo` and `theme`, move the current values of the navbar, the footer, repeated contact details and social links into `content/site.json`, read them with `useSiteContent()`, wrap the navbar and footer in `<CmsSection ... page="site">` with a `<CmsField>` for every link, label and logo, and replace the root layout's static `metadata` with `generateMetadata` calling `getSiteMetadata` (keep the old values as `fallback`). Only add a `theme` section when the site's colours are already CSS variables, or can become variables without changing how it looks.
 
 **Step 7. Verify.** Pass only when all of these hold (the dev server uses port 3000 unless the project says otherwise):
 
@@ -503,6 +506,98 @@ import { CmsField, CmsIcon } from '@brainicon/storio-elements-editor/site';
 
 Without `icons` the picker offers a built-in list of popular lucide icons, which your page must then be able to draw (for example with `getDynamicIcon(name)` from `/icons`, which adds the whole lucide set to your bundle).
 
+### Site-wide content (header, footer, SEO, theme)
+
+Some content is the same on every page: the navbar, the footer, the phone number and social links, the site name and default share image, the brand colours. It lives in the root layout or in shared components, not in one page. Put it in one page with `global: true`:
+
+```ts
+// cms.config.ts
+import siteContent from './content/site.json';
+
+export const cms = defineCms({
+  fonts: ['Inter', 'Lora'],          // optional: font names your site already loads
+  pages: [
+    // ...your pages
+    {
+      key: 'site',
+      title: 'Site settings',
+      route: '/',                    // page shown while "Site settings" is open
+      global: true,
+      defaults: siteContent,
+      sections: [
+        { key: 'header', label: 'Header' },
+        { key: 'footer', label: 'Footer' },
+        { key: 'contact', label: 'Contact & social' },
+        { key: 'seo', label: 'SEO defaults' },
+        { key: 'theme', label: 'Theme' },
+      ],
+    },
+  ],
+});
+```
+
+```json
+// content/site.json
+{
+  "header": { "logo": "/logo.svg", "links": [{ "label": "About", "href": "/about" }], "ctaLabel": "Contact us" },
+  "footer": { "copyright": "© 2026 Acme" },
+  "contact": { "email": "hello@acme.com", "phone": "+1 555 0100", "socials": [{ "label": "LinkedIn", "href": "https://linkedin.com/company/acme" }] },
+  "seo": { "siteName": "Acme", "titleTemplate": "%s | Acme", "description": "We build things.", "ogImage": "/og.png", "favicon": "/favicon.ico" },
+  "theme": { "primaryColor": "#7c3aed", "accentColor": "#22d3ee", "headingFont": "Inter" }
+}
+```
+
+In the studio, every page then lists these sections under **Site-wide** after its own sections, and clicking the navbar in any preview opens it. The page menu also has **Site settings (every page)**. A change shows on every page at once.
+
+**Header and footer.** Read the content with `useSiteContent()` and add `page="site"` to the section. The component must be inside `<CmsProviders>` in the root layout:
+
+```tsx
+'use client';
+import { CmsField, CmsSection, useSiteContent } from '@brainicon/storio-elements-editor/site';
+
+export function Navbar() {
+  const { header } = useSiteContent();
+  return (
+    <CmsSection sectionKey="header" title="Header" page="site" buttonPlacement="fixed">
+      <nav>
+        <CmsField path="logo" label="Logo"><img src={header.logo} alt="" /></CmsField>
+        {header.links.map((link, i) => (
+          <a key={link.href} href={link.href}><CmsField path={`links.${i}.label`}>{link.label}</CmsField></a>
+        ))}
+      </nav>
+    </CmsSection>
+  );
+}
+```
+
+Remove `activeOnPath` from these sections: it limited them to one page, and a site-wide section is editable everywhere.
+
+**Contact details used in several places.** Read them from `useSiteContent().contact`. Where a value shows outside its own section (the phone number in the body of the contact page), name the section on the field: `<CmsField page="site" section="contact" path="phone">{contact.phone}</CmsField>`.
+
+**SEO defaults.** In the root layout, build the metadata from the `seo` section. `titleTemplate` needs `%s`, which Next.js replaces with each page's title:
+
+```tsx
+// app/layout.tsx
+import { getSiteMetadata } from '@brainicon/storio-elements-editor/next';
+
+export async function generateMetadata() {
+  return getSiteMetadata(cms, { storage, fallback: { title: 'Acme' } });
+}
+```
+
+`getPageMetadata` then fills in what a page leaves empty (description, share image) from the site SEO. Pass `site: false` to turn that off.
+
+**Theme colours and fonts.** A value like `#7c3aed`, or a key ending in `color`/`colour`, gets a colour picker. A key ending in `font` gets a list of the `fonts` from `defineCms`; load those fonts yourself (for example with `next/font`). Put `<CmsThemeStyle />` once inside `<CmsProviders>` in the root layout: it writes the `theme` section as CSS variables (`primaryColor` becomes `--primary-color`), and the preview follows the colour picker. Use the variables in your CSS:
+
+```css
+.btn-primary { background: var(--primary-color); }
+h1, h2 { font-family: var(--heading-font), sans-serif; }
+```
+
+With Tailwind v4 you can point theme colours at them: `@theme inline { --color-brand: var(--primary-color); }`. A value containing `;`, `{`, `}`, `<`, `>` or `\` is ignored, so an editor cannot break the page's CSS.
+
+With Django and `ALLOWED_PAGES` set, add `"site"` to it.
+
 ### Pages with [slug] or [id]
 
 A page like `app/blog/[slug]/page.tsx` shows one record of your database at a time: one file, many pages (`/blog/school`, `/blog/college`). The CMS can edit both parts of it:
@@ -666,7 +761,7 @@ A copy of each edited file is saved next to it as `*.storio-editor.bak`. Running
 You can also run the Django part on its own, without the Next.js part:
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.1.0#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.2.0#subdirectory=django-storio-elements-editor"
 python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000 [--dry-run] [--no-cors] [--no-migrate]
 ```
 
@@ -734,7 +829,7 @@ Add `<CmsLogoutButton auth={cmsLogin} redirectTo="/admin/login" />` to your admi
 
 #### By hand
 
-Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.1.0#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
+Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.2.0#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
 
 ### Your own backend
 
@@ -785,8 +880,8 @@ interface CmsStorageAdapter {
 | the sign-in form says "This account is not allowed to edit the site" | the account is not staff (or your `AUTHORIZE` function says no) | set `is_staff` on the user in the Django admin |
 | the sign-in form says "Too many failed attempts" | 5 wrong passwords for that username from this address | wait 5 minutes (`LOGIN_LOCKOUT_SECONDS`) |
 | the sign-in form says "Token login is not available on this server" | `django-storio-elements-editor` is older than 0.4 or `TOKEN_LOGIN` is `False` | upgrade the package ([section 9](#9-updating)); `npx storio-editor doctor` says which |
-| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.1.0` in the project root, then retry |
-| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.1.0` |
+| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.2.0` in the project root, then retry |
+| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.2.0` |
 | the CMS screen has no styling | the Tailwind `@source` line is missing or points to the wrong place, or Tailwind is v3 | open the CSS file your root layout imports; it must contain `@source "…/node_modules/@brainicon/storio-elements-editor/dist";` below `@import "tailwindcss";` |
 | the preview shows "Loading…" forever, or is blank | the page's `route` in `cms.config.ts` is wrong, the page throws an error, a redirect catches the preview, or the site blocks being framed | open the route in a normal tab; check `middleware.ts` ([below](#redirects-and-the-preview-iframe)); remove `X-Frame-Options: DENY` |
 | hovering shows no pencil | the block is not wrapped in `<CmsSection>`, `CmsProviders` is missing from the root layout, or Edit Mode is off | wrap the block; check `app/layout.tsx`; turn Edit Mode on in the toolbar |
@@ -929,6 +1024,8 @@ There is no schema to write. The editor reads the section's content and picks a 
 | string | text input (textarea when long or multi-line) |
 | key named like `image`, `logo`, `avatar`, `src`… or an image URL | image picker (gallery, upload, URL) |
 | key named like `icon`, `iconName`… | Lucide icon picker |
+| `#rrggbb` value, or key ending in `color`/`colour` | colour picker plus hex input |
+| key ending in `font`, when `fonts` is set in `defineCms` | list of those fonts |
 | number / boolean | number input / checkbox |
 | key `id` | shown read-only |
 | array | list with add, delete and reorder |
@@ -941,6 +1038,8 @@ There is no schema to write. The editor reads the section's content and picks a 
 |---|---|
 | `pages` | pages, routes, sections and defaults. A [slug] page adds `collection` (and `parent`, the key of its list page) |
 | `icons` | the icons your site can draw, by name; the icon picker offers exactly these ([Icons](#icons)) |
+| `pages[].global` | one page of site-wide content (header, footer, SEO, theme), editable from every page ([Site-wide content](#site-wide-content-header-footer-seo-theme)) |
+| `fonts` | font names your site loads; fields ending in `font` offer exactly these |
 | `adapter` | where content is read from and saved to |
 | `title` | heading of the CMS screen |
 | `publicSiteUrl` | site base URL when the CMS runs on another origin |
@@ -961,15 +1060,20 @@ There is no schema to write. The editor reads the section's content and picks a 
 | `<CmsLogoutButton auth redirectTo? className?>` | `/admin` | sign out |
 | `<CmsProvider config>` | `/site` | wrap the site once (root layout) |
 | `usePageContent(pageKey, { initialData? })` | `/site` | read a page's content, with live preview in the CMS |
-| `<CmsSection sectionKey title activeOnPath? buttonPlacement?>` | `/site` | make a block editable |
+| `<CmsSection sectionKey title page? activeOnPath? buttonPlacement?>` | `/site` | make a block editable; `page="site"` for a site-wide block such as the navbar |
 | `<CmsField path label?>` | `/site` | give one value inside a `<CmsSection>` its own pencil |
+| `<CmsField page? section path label?>` | `/site` | a value of another section, also outside any `<CmsSection>` (the site phone number in a page body) |
+| `useSiteContent({ initialData? })` | `/site` | read the global page's content on any page, with live preview |
+| `<CmsThemeStyle section? prefix? selector?>` | `/site` | write the global page's `theme` section as CSS variables |
 | `<CmsField collection item path label?>` | `/site` | give one field of a database record its own pencil ([Pages with [slug] or [id]](#pages-with-slug-or-id)) |
 | `useCollectionItem(collection, id, values)` | `/site` | a record's values with the editor's unsaved changes applied, in the preview |
 | `<CmsIcon name fallback? …props>` | `/site` | draw an icon from `icons` of your config ([Icons](#icons)) |
 | `getDynamicIcon(name)` | `/icons` | draw any lucide icon by name (adds the whole lucide icon set to your bundle) |
 | `getPageContent(config, pageKey, { storage })` | `/next` | load a page's content on the server |
 | `getAllPageContent(config, { storage })` | `/next` | load every page's content on the server, for `<CmsProvider initialContent>` (used by the generated `CmsProviders`) |
-| `getPageMetadata(config, pageKey, { storage, fallback? })` | `/next` | build Next.js metadata from the `seo` section |
+| `getPageMetadata(config, pageKey, { storage, fallback?, site? })` | `/next` | build Next.js metadata from the `seo` section, with the site SEO as defaults |
+| `getSiteMetadata(config, { storage, fallback?, section? })` | `/next` | root-layout metadata from the global page: title template, site name, share image, favicon |
+| `themeToCss(theme, { prefix?, selector? })` | `@brainicon/storio-elements-editor` | the same CSS variables as `<CmsThemeStyle>`, as text, for server code |
 | `createCmsRouteHandler({ storage, authorize, collections?, … })` | `/next` | the API route; `collections` serves records of [slug] pages |
 | `fileStorage()` | `/next` | JSON-file storage |
 | `isCmsPreviewRequest(request, { studioPath? })` | `/next` | let the preview through middleware |
@@ -1006,11 +1110,11 @@ if (!isCmsPreviewRequest(request, { studioPath: '/admin/cms' })) {
 Install a newer release by its tag, then restart the dev server:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.1.0     # use the new tag
+npm install github:MostofaSeum/storio-elements-editor#v1.2.0     # use the new tag
 rm -rf .next                                               # PowerShell: Remove-Item -Recurse -Force .next
 ```
 
-With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.1.0#subdirectory=django-storio-elements-editor"`.
+With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.2.0#subdirectory=django-storio-elements-editor"`.
 
 ### Upgrading from `@brainicon/visual-cms`
 

@@ -48,6 +48,16 @@ var import_react_hot_toast5 = require("react-hot-toast");
 var import_lucide_react7 = require("lucide-react");
 
 // src/core/defineCms.ts
+function findGlobalPage(config) {
+  return config.pages.find((p) => p.global);
+}
+function resolveSectionPage(config, currentPage, sectionKey, requestedPage) {
+  const has = (key) => !!key && !!findPage(config, key)?.sections.some((s) => s.key === sectionKey);
+  if (requestedPage) return has(requestedPage) ? requestedPage : void 0;
+  if (has(currentPage)) return currentPage;
+  const globalPage = findGlobalPage(config);
+  return globalPage && has(globalPage.key) ? globalPage.key : void 0;
+}
 function findPage(config, pageKey) {
   return config.pages.find((p) => p.key === pageKey);
 }
@@ -213,6 +223,16 @@ function buildPreviewUrl(route, options = {}) {
 var import_react6 = require("react");
 var import_lucide_react5 = require("lucide-react");
 var import_react_hot_toast3 = __toESM(require("react-hot-toast"));
+
+// src/core/theme.ts
+function isColorField(fieldName, value) {
+  if (typeof value !== "string") return false;
+  if (/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value.trim())) return true;
+  return /colou?r$/i.test(fieldName) && (value === "" || /^#/.test(value.trim()));
+}
+function isFontField(fieldName, value, fonts) {
+  return !!fonts?.length && typeof value === "string" && /font$/i.test(fieldName);
+}
 
 // src/admin/JsonInspectorModal.tsx
 var import_react2 = require("react");
@@ -1397,6 +1417,7 @@ var SectionEditorForm = ({
   };
   const isIconField = (fieldName) => {
     const lower = fieldName.toLowerCase();
+    if (lower.endsWith("favicon") || /colou?r$/.test(lower)) return false;
     return lower === "icon" || lower.endsWith("icon") || lower.endsWith("_icon") || lower.startsWith("icon") || lower === "iconname" || lower === "badgeicon";
   };
   const isImageField = (fieldName, val) => {
@@ -1419,7 +1440,8 @@ var SectionEditorForm = ({
       "preview",
       "picture",
       "src",
-      "ogimage"
+      "ogimage",
+      "favicon"
     ];
     const hasImageKey = imageKeyKeywords.some((kw) => lowerKey.includes(kw));
     const trimmed = val.trim();
@@ -1455,6 +1477,61 @@ var SectionEditorForm = ({
             icons: config.icons
           }
         ) }, fieldId);
+      }
+      if (isColorField(key, value)) {
+        const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value.trim());
+        const pickerValue = isHex ? value.trim().length === 4 ? `#${value.trim().slice(1).split("").map((c) => c + c).join("")}` : value.trim() : "#000000";
+        return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "w-full space-y-1 py-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center justify-between gap-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { htmlFor: `${fieldId}-color`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              "input",
+              {
+                id: `${fieldId}-color`,
+                type: "color",
+                value: pickerValue,
+                onChange: (e) => handleFieldChange(path, e.target.value),
+                className: "h-9 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-700 bg-slate-950/90 p-1"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              "input",
+              {
+                type: "text",
+                value,
+                "aria-label": `${key} hex value`,
+                placeholder: "#7c3aed",
+                onChange: (e) => handleFieldChange(path, e.target.value),
+                className: "w-full text-xs px-3 py-2 font-mono rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors"
+              }
+            )
+          ] })
+        ] }, fieldId);
+      }
+      if (isFontField(key, value, config.fonts)) {
+        const fonts = config.fonts ?? [];
+        return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "w-full space-y-1 py-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center justify-between gap-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("label", { htmlFor: `${fieldId}-font`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+            "select",
+            {
+              id: `${fieldId}-font`,
+              value,
+              onChange: (e) => handleFieldChange(path, e.target.value),
+              className: "w-full text-xs px-3 py-2 rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors",
+              children: [
+                !fonts.includes(value) && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("option", { value, children: value || "Choose a font" }),
+                fonts.map((font) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("option", { value: font, style: { fontFamily: font }, children: font }, font))
+              ]
+            }
+          )
+        ] }, fieldId);
       }
       if (isImageField(key, value)) {
         return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "w-full py-1", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
@@ -1845,12 +1922,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const [isLoadingRecord, setIsLoadingRecord] = (0, import_react7.useState)(false);
   const [recordTarget, setRecordTarget] = (0, import_react7.useState)(null);
   const isRecordOpen = Boolean(recordTarget);
+  const globalPage = findGlobalPage(config);
+  const globalSections = import_react7.default.useMemo(
+    () => globalPage && globalPage.key !== activePage ? globalPage.sections : [],
+    [globalPage, activePage]
+  );
   const availableSections = import_react7.default.useMemo(() => {
-    const sections = pageDef?.sections ?? [];
+    const sections = [...pageDef?.sections ?? [], ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
     return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: import_lucide_react6.Database }, ...sections];
-  }, [pageDef, recordTarget, config.pages]);
+  }, [pageDef, globalSections, recordTarget, config.pages]);
+  const pageSections = availableSections.filter((s) => !globalSections.includes(s));
   const [activeSectionKey, setActiveSectionKey] = (0, import_react7.useState)(availableSections[0]?.key ?? "");
   const [activeFieldPath, setActiveFieldPath] = (0, import_react7.useState)(null);
   const hasUnsavedEdits = (0, import_react7.useRef)(false);
@@ -1864,6 +1947,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const [isLoadingDetail, setIsLoadingDetail] = (0, import_react7.useState)(false);
   const [isSectionListOpen, setIsSectionListOpen] = (0, import_react7.useState)(false);
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
+  const sectionPageDef = globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
+  const sectionPage = sectionPageDef?.key ?? activePage;
   const iframeRef = (0, import_react7.useRef)(null);
   const viewportContainerRef = (0, import_react7.useRef)(null);
   const [containerSize, setContainerSize] = (0, import_react7.useState)({
@@ -2048,12 +2133,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
     [adapter]
   );
   (0, import_react7.useEffect)(() => {
-    if (!pageDef) return;
+    if (!sectionPageDef) return;
     const isSectionValid = availableSections.some((section) => section.key === activeSectionKey);
     if (activeSectionKey && isSectionValid && activeSectionKey !== RECORD_SECTION) {
-      loadSectionData(pageDef, activeSectionKey);
+      loadSectionData(sectionPageDef, activeSectionKey);
     }
-  }, [activePage, activeSectionKey, loadSectionData]);
+  }, [activePage, sectionPage, activeSectionKey, loadSectionData]);
   const handleSelectSection = (sectionKey) => {
     if (sectionKey !== activeSectionKey && !confirmLeavingSection()) return;
     setActiveFieldPath(null);
@@ -2084,8 +2169,11 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
           return;
         }
         if (!message.sectionKey) return;
-        if (!availableSections.some((s) => s.key === message.sectionKey)) {
-          import_react_hot_toast4.default.error(`Section '${message.sectionKey}' is not configured for this page`);
+        const ownerPage = resolveSectionPage(config, activePage, message.sectionKey, message.page);
+        if (!ownerPage || !availableSections.some((s) => s.key === message.sectionKey)) {
+          import_react_hot_toast4.default.error(
+            message.page && message.page !== activePage ? `Section '${message.sectionKey}' belongs to the page '${message.page}'. Open that page to edit it.` : `Section '${message.sectionKey}' is not configured for this page`
+          );
           return;
         }
         if (message.sectionKey !== activeSectionRef.current && !confirmLeavingSection()) return;
@@ -2097,30 +2185,30 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
       },
       { origins, source: () => iframeRef.current?.contentWindow }
     );
-  }, [origins, availableSections, confirmLeavingSection]);
+  }, [origins, availableSections, confirmLeavingSection, config, activePage]);
   const handleSaveSection = async (content, isPublished) => {
-    if (!pageDef) return;
-    await adapter.saveRecord({ page: activePage, sectionKey: activeSectionKey, content, isPublished });
+    if (!sectionPageDef) return;
+    await adapter.saveRecord({ page: sectionPage, sectionKey: activeSectionKey, content, isPublished });
     sendToPreview({
       type: CMS_MESSAGE.DRAFT_PREVIEW,
-      page: activePage,
+      page: sectionPage,
       sectionKey: activeSectionKey,
       draftContent: content
     });
     sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
-    const record = await adapter.getRecord(activePage, activeSectionKey, { includeDrafts: true });
-    setSectionDetail(getSectionDetail(pageDef, activeSectionKey, record));
+    const record = await adapter.getRecord(sectionPage, activeSectionKey, { includeDrafts: true });
+    setSectionDetail(getSectionDetail(sectionPageDef, activeSectionKey, record));
   };
   const handleResetSection = async () => {
-    if (!pageDef) return;
-    await adapter.deleteRecord(activePage, activeSectionKey);
+    if (!sectionPageDef) return;
+    await adapter.deleteRecord(sectionPage, activeSectionKey);
     sendToPreview({ type: CMS_MESSAGE.CONTENT_UPDATED });
-    setSectionDetail(getSectionDetail(pageDef, activeSectionKey, null));
+    setSectionDetail(getSectionDetail(sectionPageDef, activeSectionKey, null));
   };
   const handleDraftChange = (draftContent) => {
     sendToPreview({
       type: CMS_MESSAGE.DRAFT_PREVIEW,
-      page: activePage,
+      page: sectionPage,
       sectionKey: activeSectionKey,
       draftContent
     });
@@ -2167,7 +2255,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             ")"
           ] })
         ] }),
-        topLevelPages(config).length > 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        topLevelPages(config).length > 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
           "select",
           {
             value: groupPage?.key ?? activePage,
@@ -2176,12 +2264,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             },
             "aria-label": "Page to edit",
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-200 focus:outline-none focus:border-purple-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
-            children: topLevelPages(config).map((p) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: p.key, children: [
-              p.title,
-              " (",
-              p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, "") || "/" : p.route,
-              ")"
-            ] }, p.key))
+            children: [
+              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: p.key, children: [
+                p.title,
+                " (",
+                p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, "") || "/" : p.route,
+                ")"
+              ] }, p.key)),
+              globalPage && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: globalPage.key, children: [
+                globalPage.title || "Site settings",
+                " (every page)"
+              ] })
+            ]
           }
         ),
         groupPage && recordPages.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
@@ -2321,24 +2415,32 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             }
           ),
           isSectionListOpen && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: availableSections.map((sec) => {
-              const isSelected = sec.key === activeSectionKey;
-              const IconComponent = sec.icon;
-              return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => handleSelectSection(sec.key),
-                  className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected ? "bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400" : "bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800"}`,
-                  children: [
-                    IconComponent && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: sec.label }),
-                    isSelected && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.ChevronRight, { className: "w-3 h-3 text-purple-200" })
-                  ]
-                },
-                sec.key
-              );
-            }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, globalSections].map(
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_react7.default.Fragment, { children: [
+                index === 1 && /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Globe, { className: "w-3 h-3" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Site-wide: shown on every page" })
+                ] }),
+                list.map((sec) => {
+                  const isSelected = sec.key === activeSectionKey;
+                  const IconComponent = sec.icon;
+                  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => handleSelectSection(sec.key),
+                      className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected ? "bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400" : "bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800"}`,
+                      children: [
+                        IconComponent && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: sec.label }),
+                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.ChevronRight, { className: "w-3 h-3 text-purple-200" })
+                      ]
+                    },
+                    sec.key
+                  );
+                })
+              ] }, index)
+            ) }),
             /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
               /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
               /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Selecting a section scrolls the preview on the right to it." })
@@ -2373,10 +2475,10 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
         ) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_lucide_react6.Loader2, { className: "w-6 h-6 animate-spin text-purple-400" }),
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: "Loading section form..." })
-        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === activePage ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
           SectionEditorForm,
           {
-            page: activePage,
+            page: sectionPage,
             sectionKey: activeSectionKey,
             sectionLabel: activeSectionDef?.label,
             pagePath: currentRoute,

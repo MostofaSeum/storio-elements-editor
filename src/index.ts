@@ -1,5 +1,6 @@
 export * from './core/types';
-export { defineCms, findPage, isValidKey } from './core/defineCms';
+export { defineCms, findPage, findGlobalPage, resolveSectionPage, isValidKey } from './core/defineCms';
+export { themeToCss, themeToCssVariables, isColorField, isFontField } from './core/theme';
 export { mergePageContent, listManagedSections, getSectionDetail, getSectionKeys } from './core/merge';
 export {
   CMS_MESSAGE,
