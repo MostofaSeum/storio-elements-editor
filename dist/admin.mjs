@@ -21,7 +21,7 @@ import {
 } from "./chunk-EKYNAPKE.mjs";
 
 // src/admin/CmsStudio.tsx
-import { useState as useState8, useEffect as useEffect7 } from "react";
+import { useState as useState9, useEffect as useEffect7 } from "react";
 import { Toaster } from "react-hot-toast";
 import { Globe as Globe2, Eye as Eye3 } from "lucide-react";
 
@@ -47,7 +47,7 @@ function useStudio() {
 }
 
 // src/admin/CanvasEditor.tsx
-import React8, { useState as useState7, useEffect as useEffect6, useRef as useRef3, useCallback } from "react";
+import React9, { useState as useState8, useEffect as useEffect6, useRef as useRef3, useCallback } from "react";
 import {
   Monitor as Monitor3,
   Tablet as Tablet3,
@@ -87,7 +87,7 @@ function recordPagesOf(config, group) {
 }
 
 // src/admin/SectionEditorForm.tsx
-import { useState as useState6, useEffect as useEffect5, useMemo as useMemo4, useRef as useRef2 } from "react";
+import { useState as useState7, useEffect as useEffect5, useMemo as useMemo4, useRef as useRef2 } from "react";
 import {
   Save,
   RotateCcw,
@@ -1088,8 +1088,114 @@ var VisualIconPicker = ({
   ] });
 };
 
+// src/admin/TagInput.tsx
+import { useState as useState6 } from "react";
+import { X as X5 } from "lucide-react";
+import { jsx as jsx6, jsxs as jsxs5 } from "react/jsx-runtime";
+function isTagListField(fieldName, value) {
+  return Array.isArray(value) && value.every((item) => typeof item === "string") && /(keywords?|tags?|keyphrases?)$/i.test(fieldName);
+}
+function splitTags(text) {
+  return text.split(/[,\n\r]+/).map((tag) => tag.trim()).filter(Boolean);
+}
+function addTags(list, incoming, max) {
+  const next = [...list];
+  const seen = new Set(list.map((tag) => tag.toLowerCase()));
+  for (const tag of incoming) {
+    if (max !== void 0 && next.length >= max) break;
+    const lower = tag.toLowerCase();
+    if (!tag || seen.has(lower)) continue;
+    seen.add(lower);
+    next.push(tag);
+  }
+  return next;
+}
+var TagInput = ({ label, fieldId, value, onChange, max, hint }) => {
+  const [draft, setDraft] = useState6("");
+  const isFull = max !== void 0 && value.length >= max;
+  const commit = (text) => {
+    const tags = splitTags(text);
+    if (tags.length > 0) onChange(addTags(value, tags, max));
+    setDraft("");
+  };
+  const onKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      commit(draft);
+    } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
+      e.preventDefault();
+      onChange(value.slice(0, -1));
+    }
+  };
+  const onPaste = (e) => {
+    const text = e.clipboardData.getData("text");
+    if (/[,\n\r]/.test(text)) {
+      e.preventDefault();
+      commit(draft + text);
+    }
+  };
+  return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-1.5 py-2", "data-cms-tag-input": fieldId, children: [
+    /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-2", children: [
+      /* @__PURE__ */ jsxs5("label", { htmlFor: `${fieldId}-tag`, className: "text-xs font-semibold text-slate-200 capitalize flex items-center gap-1.5", children: [
+        label,
+        /* @__PURE__ */ jsxs5("span", { className: "text-[10px] px-1.5 rounded-full font-mono bg-purple-900/60 text-purple-200", children: [
+          value.length,
+          max !== void 0 ? ` / ${max}` : ""
+        ] })
+      ] }),
+      value.length > 0 && /* @__PURE__ */ jsx6("button", { type: "button", onClick: () => onChange([]), className: "text-[10px] text-slate-500 hover:text-rose-300", children: "Clear all" })
+    ] }),
+    /* @__PURE__ */ jsxs5(
+      "div",
+      {
+        className: "flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-950/90 p-2 focus-within:border-purple-400 transition-colors",
+        onClick: (e) => e.currentTarget.querySelector("input")?.focus(),
+        children: [
+          value.map((tag, index) => /* @__PURE__ */ jsxs5(
+            "span",
+            {
+              className: "inline-flex items-center gap-1 max-w-full rounded-md bg-purple-600/25 border border-purple-500/40 pl-2 pr-1 py-0.5 text-[11px] text-purple-100",
+              children: [
+                /* @__PURE__ */ jsx6("span", { className: "truncate", children: tag }),
+                /* @__PURE__ */ jsx6(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => onChange(value.filter((_, i) => i !== index)),
+                    className: "rounded p-0.5 text-purple-300 hover:text-white hover:bg-purple-500/40",
+                    "aria-label": `Remove ${tag}`,
+                    title: `Remove ${tag}`,
+                    children: /* @__PURE__ */ jsx6(X5, { className: "w-3 h-3" })
+                  }
+                )
+              ]
+            },
+            `${tag}-${index}`
+          )),
+          /* @__PURE__ */ jsx6(
+            "input",
+            {
+              id: `${fieldId}-tag`,
+              type: "text",
+              value: draft,
+              disabled: isFull,
+              placeholder: isFull ? "Limit reached" : value.length === 0 ? "Type and press Enter, or paste a list" : "Add\u2026",
+              onChange: (e) => setDraft(e.target.value),
+              onKeyDown,
+              onPaste,
+              onBlur: () => draft.trim() && commit(draft),
+              className: "flex-1 min-w-[8rem] bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none py-0.5"
+            }
+          )
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsx6("p", { className: "text-[10px] text-slate-500", children: hint ?? "Enter or comma adds a tag. Paste a comma-separated list to add many at once." })
+  ] });
+};
+
 // src/admin/SectionEditorForm.tsx
-import { Fragment as Fragment2, jsx as jsx6, jsxs as jsxs5 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
 function isCodeValue(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = Object.keys(value).sort();
@@ -1121,13 +1227,13 @@ var SectionEditorForm = ({
   const getEffectiveInitialData = (data) => {
     return transform ? transform(data) : data;
   };
-  const [formData, setFormData] = useState6(() => getEffectiveInitialData(initialData));
-  const [published, setPublished] = useState6(initialPublished);
-  const [isSaving, setIsSaving] = useState6(false);
-  const [isResetting, setIsResetting] = useState6(false);
-  const [isJsonModalOpen, setIsJsonModalOpen] = useState6(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState6(false);
-  const [isDirty, setIsDirty] = useState6(false);
+  const [formData, setFormData] = useState7(() => getEffectiveInitialData(initialData));
+  const [published, setPublished] = useState7(initialPublished);
+  const [isSaving, setIsSaving] = useState7(false);
+  const [isResetting, setIsResetting] = useState7(false);
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState7(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState7(false);
+  const [isDirty, setIsDirty] = useState7(false);
   useEffect5(() => {
     setFormData(getEffectiveInitialData(initialData));
     setPublished(initialPublished);
@@ -1334,20 +1440,20 @@ var SectionEditorForm = ({
     if (typeof value === "string") {
       const isIdField = key.toLowerCase() === "id";
       if (isIdField) {
-        return /* @__PURE__ */ jsxs5("div", { className: "w-full flex items-center justify-between py-1 text-xs border-b border-slate-800/40", children: [
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1.5 min-w-0", children: [
-            /* @__PURE__ */ jsx6(Lock, { className: "w-3 h-3 text-purple-400 shrink-0" }),
-            /* @__PURE__ */ jsxs5("span", { className: "text-slate-400 font-mono text-[11px] shrink-0", children: [
+        return /* @__PURE__ */ jsxs6("div", { className: "w-full flex items-center justify-between py-1 text-xs border-b border-slate-800/40", children: [
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 min-w-0", children: [
+            /* @__PURE__ */ jsx7(Lock, { className: "w-3 h-3 text-purple-400 shrink-0" }),
+            /* @__PURE__ */ jsxs6("span", { className: "text-slate-400 font-mono text-[11px] shrink-0", children: [
               key,
               ":"
             ] }),
-            /* @__PURE__ */ jsx6("span", { className: "text-purple-300 font-mono font-medium px-1.5 py-0.2 rounded bg-purple-950/60 text-[11px] truncate", children: value })
+            /* @__PURE__ */ jsx7("span", { className: "text-purple-300 font-mono font-medium px-1.5 py-0.2 rounded bg-purple-950/60 text-[11px] truncate", children: value })
           ] }),
-          /* @__PURE__ */ jsx6("span", { className: "text-[10px] text-slate-500 font-mono shrink-0", children: "system id" })
+          /* @__PURE__ */ jsx7("span", { className: "text-[10px] text-slate-500 font-mono shrink-0", children: "system id" })
         ] }, fieldId);
       }
       if (isIconField(key)) {
-        return /* @__PURE__ */ jsx6("div", { className: "w-full py-1", children: /* @__PURE__ */ jsx6(
+        return /* @__PURE__ */ jsx7("div", { className: "w-full py-1", children: /* @__PURE__ */ jsx7(
           VisualIconPicker,
           {
             value,
@@ -1361,13 +1467,13 @@ var SectionEditorForm = ({
       if (isColorField(key, value)) {
         const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value.trim());
         const pickerValue = isHex ? value.trim().length === 4 ? `#${value.trim().slice(1).split("").map((c) => c + c).join("")}` : value.trim() : "#000000";
-        return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-1 py-1", children: [
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-1", children: [
-            /* @__PURE__ */ jsx6("label", { htmlFor: `${fieldId}-color`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-            /* @__PURE__ */ jsx6("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+        return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-1 py-1", children: [
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-1", children: [
+            /* @__PURE__ */ jsx7("label", { htmlFor: `${fieldId}-color`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+            /* @__PURE__ */ jsx7("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
           ] }),
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx6(
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx7(
               "input",
               {
                 id: `${fieldId}-color`,
@@ -1377,7 +1483,7 @@ var SectionEditorForm = ({
                 className: "h-9 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-700 bg-slate-950/90 p-1"
               }
             ),
-            /* @__PURE__ */ jsx6(
+            /* @__PURE__ */ jsx7(
               "input",
               {
                 type: "text",
@@ -1393,12 +1499,12 @@ var SectionEditorForm = ({
       }
       if (isFontField(key, value, config.fonts)) {
         const fonts = config.fonts ?? [];
-        return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-1 py-1", children: [
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-1", children: [
-            /* @__PURE__ */ jsx6("label", { htmlFor: `${fieldId}-font`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-            /* @__PURE__ */ jsx6("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+        return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-1 py-1", children: [
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-1", children: [
+            /* @__PURE__ */ jsx7("label", { htmlFor: `${fieldId}-font`, className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+            /* @__PURE__ */ jsx7("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
           ] }),
-          /* @__PURE__ */ jsxs5(
+          /* @__PURE__ */ jsxs6(
             "select",
             {
               id: `${fieldId}-font`,
@@ -1406,15 +1512,15 @@ var SectionEditorForm = ({
               onChange: (e) => handleFieldChange(path, e.target.value),
               className: "w-full text-xs px-3 py-2 rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors",
               children: [
-                !fonts.includes(value) && /* @__PURE__ */ jsx6("option", { value, children: value || "Choose a font" }),
-                fonts.map((font) => /* @__PURE__ */ jsx6("option", { value: font, style: { fontFamily: font }, children: font }, font))
+                !fonts.includes(value) && /* @__PURE__ */ jsx7("option", { value, children: value || "Choose a font" }),
+                fonts.map((font) => /* @__PURE__ */ jsx7("option", { value: font, style: { fontFamily: font }, children: font }, font))
               ]
             }
           )
         ] }, fieldId);
       }
       if (isImageField(key, value)) {
-        return /* @__PURE__ */ jsx6("div", { className: "w-full py-1", children: /* @__PURE__ */ jsx6(
+        return /* @__PURE__ */ jsx7("div", { className: "w-full py-1", children: /* @__PURE__ */ jsx7(
           VisualImagePicker,
           {
             value,
@@ -1426,12 +1532,12 @@ var SectionEditorForm = ({
       }
       const displayLabel = key.replace(/([A-Z])/g, " $1");
       const isLongText = value.length > 70 || value.includes("\n");
-      return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-1 py-1", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-1", children: [
-          /* @__PURE__ */ jsx6("label", { className: "text-xs font-semibold text-slate-200 capitalize flex items-center gap-1.5", children: /* @__PURE__ */ jsx6("span", { children: displayLabel }) }),
-          /* @__PURE__ */ jsx6("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+      return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-1 py-1", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-1", children: [
+          /* @__PURE__ */ jsx7("label", { className: "text-xs font-semibold text-slate-200 capitalize flex items-center gap-1.5", children: /* @__PURE__ */ jsx7("span", { children: displayLabel }) }),
+          /* @__PURE__ */ jsx7("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
         ] }),
-        isLongText ? /* @__PURE__ */ jsx6(
+        isLongText ? /* @__PURE__ */ jsx7(
           "textarea",
           {
             value,
@@ -1439,7 +1545,7 @@ var SectionEditorForm = ({
             onChange: (e) => handleFieldChange(path, e.target.value),
             className: "w-full text-xs p-2.5 rounded-lg bg-slate-950/90 border border-slate-700 text-white focus:outline-none focus:border-purple-400 transition-colors"
           }
-        ) : /* @__PURE__ */ jsx6(
+        ) : /* @__PURE__ */ jsx7(
           "input",
           {
             type: "text",
@@ -1453,24 +1559,24 @@ var SectionEditorForm = ({
     if (typeof value === "number") {
       const isIdField = key.toLowerCase() === "id";
       if (isIdField) {
-        return /* @__PURE__ */ jsxs5("div", { className: "w-full flex items-center justify-between py-1 text-xs border-b border-slate-800/40", children: [
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1.5 min-w-0", children: [
-            /* @__PURE__ */ jsx6(Lock, { className: "w-3 h-3 text-purple-400 shrink-0" }),
-            /* @__PURE__ */ jsxs5("span", { className: "text-slate-400 font-mono text-[11px] shrink-0", children: [
+        return /* @__PURE__ */ jsxs6("div", { className: "w-full flex items-center justify-between py-1 text-xs border-b border-slate-800/40", children: [
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 min-w-0", children: [
+            /* @__PURE__ */ jsx7(Lock, { className: "w-3 h-3 text-purple-400 shrink-0" }),
+            /* @__PURE__ */ jsxs6("span", { className: "text-slate-400 font-mono text-[11px] shrink-0", children: [
               key,
               ":"
             ] }),
-            /* @__PURE__ */ jsx6("span", { className: "text-purple-300 font-mono font-medium px-1.5 py-0.2 rounded bg-purple-950/60 text-[11px] truncate", children: value })
+            /* @__PURE__ */ jsx7("span", { className: "text-purple-300 font-mono font-medium px-1.5 py-0.2 rounded bg-purple-950/60 text-[11px] truncate", children: value })
           ] }),
-          /* @__PURE__ */ jsx6("span", { className: "text-[10px] text-slate-500 font-mono shrink-0", children: "system id" })
+          /* @__PURE__ */ jsx7("span", { className: "text-[10px] text-slate-500 font-mono shrink-0", children: "system id" })
         ] }, fieldId);
       }
-      return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-1 py-1", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-1", children: [
-          /* @__PURE__ */ jsx6("label", { className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-          /* @__PURE__ */ jsx6("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
+      return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-1 py-1", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-1", children: [
+          /* @__PURE__ */ jsx7("label", { className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+          /* @__PURE__ */ jsx7("span", { className: "text-[10px] font-mono text-slate-500", children: fieldId })
         ] }),
-        /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsx7(
           "input",
           {
             type: "number",
@@ -1482,12 +1588,12 @@ var SectionEditorForm = ({
       ] }, fieldId);
     }
     if (typeof value === "boolean") {
-      return /* @__PURE__ */ jsxs5("div", { className: "w-full flex items-center justify-between py-2 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800", children: [
-        /* @__PURE__ */ jsxs5("div", { children: [
-          /* @__PURE__ */ jsx6("span", { className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-          /* @__PURE__ */ jsx6("span", { className: "block text-[10px] font-mono text-slate-500", children: fieldId })
+      return /* @__PURE__ */ jsxs6("div", { className: "w-full flex items-center justify-between py-2 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800", children: [
+        /* @__PURE__ */ jsxs6("div", { children: [
+          /* @__PURE__ */ jsx7("span", { className: "text-xs font-semibold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+          /* @__PURE__ */ jsx7("span", { className: "block text-[10px] font-mono text-slate-500", children: fieldId })
         ] }),
-        /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsx7(
           "input",
           {
             type: "checkbox",
@@ -1498,21 +1604,36 @@ var SectionEditorForm = ({
         )
       ] }, fieldId);
     }
+    if (isTagListField(key, value)) {
+      const tagLimit = getArrayLimit(path);
+      return /* @__PURE__ */ jsx7(
+        TagInput,
+        {
+          label: key.replace(/([A-Z])/g, " $1"),
+          fieldId,
+          value,
+          max: tagLimit?.max,
+          hint: /keywords?$/i.test(key) ? "Enter or comma adds a keyword; paste a comma-separated list to add many. Google does not use meta keywords for ranking." : void 0,
+          onChange: (next) => handleFieldChange(path, next)
+        },
+        fieldId
+      );
+    }
     if (Array.isArray(value)) {
       const isPrimitiveArray = value.length === 0 || typeof value[0] !== "object";
       const itemTemplate = value.length > 0 ? typeof value[0] === "object" ? value[0] : "" : "";
       const limitInfo = getArrayLimit(path);
       const isMaxReached = limitInfo ? value.length >= limitInfo.max : false;
-      return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-2 py-2", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between pb-1.5 border-b border-purple-500/30", children: [
-          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx6("span", { className: "text-xs font-bold text-purple-300 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-            /* @__PURE__ */ jsxs5("span", { className: `text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isMaxReached ? "bg-amber-900/60 text-amber-300 border border-amber-500/30" : "bg-purple-900/60 text-purple-200"}`, children: [
+      return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-2 py-2", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between pb-1.5 border-b border-purple-500/30", children: [
+          /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx7("span", { className: "text-xs font-bold text-purple-300 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+            /* @__PURE__ */ jsxs6("span", { className: `text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isMaxReached ? "bg-amber-900/60 text-amber-300 border border-amber-500/30" : "bg-purple-900/60 text-purple-200"}`, children: [
               value.length,
               limitInfo ? ` / ${limitInfo.max} max` : ""
             ] })
           ] }),
-          /* @__PURE__ */ jsxs5(
+          /* @__PURE__ */ jsxs6(
             "button",
             {
               type: "button",
@@ -1520,24 +1641,24 @@ var SectionEditorForm = ({
               className: `flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${isMaxReached ? "bg-slate-800/80 text-slate-400 border-slate-700 hover:bg-slate-700/80" : "bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40"}`,
               title: isMaxReached ? `Limit of ${limitInfo?.max} reached` : "Add new item",
               children: [
-                /* @__PURE__ */ jsx6(Plus, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsx6("span", { children: isMaxReached ? "Max Reached" : "Add" })
+                /* @__PURE__ */ jsx7(Plus, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ jsx7("span", { children: isMaxReached ? "Max Reached" : "Add" })
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ jsx6("div", { className: "space-y-2.5", children: value.map((item, idx) => /* @__PURE__ */ jsxs5(
+        /* @__PURE__ */ jsx7("div", { className: "space-y-2.5", children: value.map((item, idx) => /* @__PURE__ */ jsxs6(
           "div",
           {
             className: "p-2.5 sm:p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-colors space-y-2",
             children: [
-              /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between pb-1 border-b border-slate-800/80", children: [
-                /* @__PURE__ */ jsxs5("span", { className: "text-[11px] font-bold text-purple-300", children: [
+              /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between pb-1 border-b border-slate-800/80", children: [
+                /* @__PURE__ */ jsxs6("span", { className: "text-[11px] font-bold text-purple-300", children: [
                   "#",
                   idx + 1
                 ] }),
-                /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1", children: [
-                  /* @__PURE__ */ jsx6(
+                /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1", children: [
+                  /* @__PURE__ */ jsx7(
                     "button",
                     {
                       type: "button",
@@ -1545,10 +1666,10 @@ var SectionEditorForm = ({
                       onClick: () => handleArrayMove(path, idx, "up"),
                       className: "p-1 text-slate-400 hover:text-white disabled:opacity-20 transition-colors",
                       title: "Move Up",
-                      children: /* @__PURE__ */ jsx6(ChevronUp, { className: "w-3.5 h-3.5" })
+                      children: /* @__PURE__ */ jsx7(ChevronUp, { className: "w-3.5 h-3.5" })
                     }
                   ),
-                  /* @__PURE__ */ jsx6(
+                  /* @__PURE__ */ jsx7(
                     "button",
                     {
                       type: "button",
@@ -1556,22 +1677,22 @@ var SectionEditorForm = ({
                       onClick: () => handleArrayMove(path, idx, "down"),
                       className: "p-1 text-slate-400 hover:text-white disabled:opacity-20 transition-colors",
                       title: "Move Down",
-                      children: /* @__PURE__ */ jsx6(ChevronDown, { className: "w-3.5 h-3.5" })
+                      children: /* @__PURE__ */ jsx7(ChevronDown, { className: "w-3.5 h-3.5" })
                     }
                   ),
-                  /* @__PURE__ */ jsx6(
+                  /* @__PURE__ */ jsx7(
                     "button",
                     {
                       type: "button",
                       onClick: () => handleArrayDelete(path, idx),
                       className: "p-1 text-slate-400 hover:text-rose-400 transition-colors ml-1",
                       title: "Delete Item",
-                      children: /* @__PURE__ */ jsx6(Trash22, { className: "w-3.5 h-3.5" })
+                      children: /* @__PURE__ */ jsx7(Trash22, { className: "w-3.5 h-3.5" })
                     }
                   )
                 ] })
               ] }),
-              isPrimitiveArray ? isImageField(key, item) ? /* @__PURE__ */ jsx6(
+              isPrimitiveArray ? isImageField(key, item) ? /* @__PURE__ */ jsx7(
                 VisualImagePicker,
                 {
                   value: item || "",
@@ -1579,7 +1700,7 @@ var SectionEditorForm = ({
                   label: `${key} #${idx + 1}`,
                   fieldId: `${fieldId}.${idx}`
                 }
-              ) : /* @__PURE__ */ jsx6(
+              ) : /* @__PURE__ */ jsx7(
                 "input",
                 {
                   type: "text",
@@ -1587,7 +1708,7 @@ var SectionEditorForm = ({
                   onChange: (e) => handleFieldChange([...path, idx], e.target.value),
                   className: "w-full text-xs px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-purple-400"
                 }
-              ) : /* @__PURE__ */ jsx6("div", { className: "space-y-2 pt-1", children: Object.entries(item).map(
+              ) : /* @__PURE__ */ jsx7("div", { className: "space-y-2 pt-1", children: Object.entries(item).map(
                 ([subKey, subVal]) => renderField(subKey, subVal, [...path, idx, subKey])
               ) })
             ]
@@ -1597,43 +1718,43 @@ var SectionEditorForm = ({
       ] }, fieldId);
     }
     if (typeof value === "object" && value !== null) {
-      return /* @__PURE__ */ jsxs5("div", { className: "w-full space-y-2 py-2 border-t border-slate-800/80 first:border-t-0", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1.5 pb-1", children: [
-          /* @__PURE__ */ jsx6("span", { className: "text-xs font-bold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
-          /* @__PURE__ */ jsxs5("span", { className: "text-[10px] font-mono text-slate-500", children: [
+      return /* @__PURE__ */ jsxs6("div", { className: "w-full space-y-2 py-2 border-t border-slate-800/80 first:border-t-0", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 pb-1", children: [
+          /* @__PURE__ */ jsx7("span", { className: "text-xs font-bold text-slate-200 capitalize", children: key.replace(/([A-Z])/g, " $1") }),
+          /* @__PURE__ */ jsxs6("span", { className: "text-[10px] font-mono text-slate-500", children: [
             "(",
             fieldId,
             ")"
           ] })
         ] }),
-        /* @__PURE__ */ jsx6("div", { className: "space-y-2 pl-1", children: Object.entries(value).map(
+        /* @__PURE__ */ jsx7("div", { className: "space-y-2 pl-1", children: Object.entries(value).map(
           ([subKey, subVal]) => renderField(subKey, subVal, [...path, subKey])
         ) })
       ] }, fieldId);
     }
     return null;
   };
-  return /* @__PURE__ */ jsxs5("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs5("div", { className: "sticky top-0 z-30 rounded-xl bg-slate-900/95 border border-purple-500/30 overflow-hidden shadow-lg backdrop-blur-md", children: [
-      /* @__PURE__ */ jsxs5("div", { className: "p-3 flex items-center justify-between gap-2 border-b border-purple-500/20", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2 min-w-0", children: [
-          /* @__PURE__ */ jsx6("h2", { className: "text-sm font-bold text-white capitalize truncate", children: sectionLabel || sectionKey.replace(/([A-Z])/g, " $1") }),
-          isRecord ? /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsxs6("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs6("div", { className: "sticky top-0 z-30 rounded-xl bg-slate-900/95 border border-purple-500/30 overflow-hidden shadow-lg backdrop-blur-md", children: [
+      /* @__PURE__ */ jsxs6("div", { className: "p-3 flex items-center justify-between gap-2 border-b border-purple-500/20", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 min-w-0", children: [
+          /* @__PURE__ */ jsx7("h2", { className: "text-sm font-bold text-white capitalize truncate", children: sectionLabel || sectionKey.replace(/([A-Z])/g, " $1") }),
+          isRecord ? /* @__PURE__ */ jsx7(
             "span",
             {
               className: "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 shrink-0 font-medium",
               title: "Saving writes this record to the site's database and the page shows it right away.",
-              children: /* @__PURE__ */ jsx6("span", { children: "Database record" })
+              children: /* @__PURE__ */ jsx7("span", { children: "Database record" })
             }
-          ) : hasCustomOverride ? /* @__PURE__ */ jsxs5("span", { className: "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0 font-medium", children: [
-            /* @__PURE__ */ jsx6(CheckCircle2, { className: "w-3 h-3 text-emerald-400 shrink-0" }),
-            /* @__PURE__ */ jsx6("span", { children: "Custom" })
-          ] }) : /* @__PURE__ */ jsxs5("span", { className: "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 shrink-0 font-medium", children: [
-            /* @__PURE__ */ jsx6(ShieldCheck, { className: "w-3 h-3 text-slate-400 shrink-0" }),
-            /* @__PURE__ */ jsx6("span", { children: "Default" })
+          ) : hasCustomOverride ? /* @__PURE__ */ jsxs6("span", { className: "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0 font-medium", children: [
+            /* @__PURE__ */ jsx7(CheckCircle2, { className: "w-3 h-3 text-emerald-400 shrink-0" }),
+            /* @__PURE__ */ jsx7("span", { children: "Custom" })
+          ] }) : /* @__PURE__ */ jsxs6("span", { className: "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 shrink-0 font-medium", children: [
+            /* @__PURE__ */ jsx7(ShieldCheck, { className: "w-3 h-3 text-slate-400 shrink-0" }),
+            /* @__PURE__ */ jsx7("span", { children: "Default" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs5(
+        /* @__PURE__ */ jsxs6(
           "button",
           {
             type: "button",
@@ -1641,39 +1762,39 @@ var SectionEditorForm = ({
             onClick: handleSave,
             className: `inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${isSaving ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/60" : "bg-purple-600 hover:bg-purple-500 text-white shadow-md active:scale-95"}`,
             children: [
-              /* @__PURE__ */ jsx6(Save, { className: "w-3.5 h-3.5 shrink-0" }),
-              /* @__PURE__ */ jsx6("span", { children: isSaving ? "Saving..." : isRecord ? "Save" : published ? "Save & Publish" : "Save Draft" })
+              /* @__PURE__ */ jsx7(Save, { className: "w-3.5 h-3.5 shrink-0" }),
+              /* @__PURE__ */ jsx7("span", { children: isSaving ? "Saving..." : isRecord ? "Save" : published ? "Save & Publish" : "Save Draft" })
             ]
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs5("div", { className: "px-3 py-2 bg-slate-950/60 flex items-center justify-between gap-2 text-xs text-slate-400", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2 min-w-0 text-[11px]", children: [
-          /* @__PURE__ */ jsx6("span", { className: "text-purple-300 font-mono truncate", children: pagePath }),
-          updatedAt && /* @__PURE__ */ jsx6("span", { className: "text-slate-500 hidden sm:inline truncate", children: new Date(updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })
+      /* @__PURE__ */ jsxs6("div", { className: "px-3 py-2 bg-slate-950/60 flex items-center justify-between gap-2 text-xs text-slate-400", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 min-w-0 text-[11px]", children: [
+          /* @__PURE__ */ jsx7("span", { className: "text-purple-300 font-mono truncate", children: pagePath }),
+          updatedAt && /* @__PURE__ */ jsx7("span", { className: "text-slate-500 hidden sm:inline truncate", children: new Date(updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })
         ] }),
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-1.5 shrink-0", children: [
-          /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 shrink-0", children: [
+          /* @__PURE__ */ jsx7(
             "button",
             {
               type: "button",
               onClick: () => setIsPreviewOpen(true),
               className: "p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-colors",
               title: "Preview Section",
-              children: /* @__PURE__ */ jsx6(Eye, { className: "w-3.5 h-3.5 text-purple-400" })
+              children: /* @__PURE__ */ jsx7(Eye, { className: "w-3.5 h-3.5 text-purple-400" })
             }
           ),
-          /* @__PURE__ */ jsx6(
+          /* @__PURE__ */ jsx7(
             "button",
             {
               type: "button",
               onClick: () => setIsJsonModalOpen(true),
               className: "p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-colors",
               title: "View Raw JSON",
-              children: /* @__PURE__ */ jsx6(Code, { className: "w-3.5 h-3.5 text-emerald-400" })
+              children: /* @__PURE__ */ jsx7(Code, { className: "w-3.5 h-3.5 text-emerald-400" })
             }
           ),
-          hasCustomOverride && !isRecord && /* @__PURE__ */ jsx6(
+          hasCustomOverride && !isRecord && /* @__PURE__ */ jsx7(
             "button",
             {
               type: "button",
@@ -1681,18 +1802,18 @@ var SectionEditorForm = ({
               onClick: handleReset,
               className: "p-1.5 rounded-lg text-amber-300 hover:text-amber-200 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-700/60 transition-colors",
               title: "Reset to Template Default",
-              children: /* @__PURE__ */ jsx6(RotateCcw, { className: "w-3.5 h-3.5" })
+              children: /* @__PURE__ */ jsx7(RotateCcw, { className: "w-3.5 h-3.5" })
             }
           )
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs5("div", { className: "bg-slate-900/80 border border-purple-500/20 rounded-xl p-3 sm:p-4 space-y-3", children: [
-      focusPath && !isFocused && /* @__PURE__ */ jsx6("p", { role: "status", className: "text-xs rounded-lg px-3 py-2 bg-amber-950/40 border border-amber-700/60 text-amber-200", children: isRecord ? "This field could not be found, so every field of the record is shown." : "This field could not be found, so the whole section is shown." }),
-      isFocused && focusSegments ? /* @__PURE__ */ jsxs5("div", { ref: focusAreaRef, className: "space-y-3", children: [
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between gap-2 pb-2 border-b border-purple-500/20", children: [
-          /* @__PURE__ */ jsx6("span", { className: "text-[11px] font-semibold text-purple-200", children: "Editing one field" }),
-          /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsxs6("div", { className: "bg-slate-900/80 border border-purple-500/20 rounded-xl p-3 sm:p-4 space-y-3", children: [
+      focusPath && !isFocused && /* @__PURE__ */ jsx7("p", { role: "status", className: "text-xs rounded-lg px-3 py-2 bg-amber-950/40 border border-amber-700/60 text-amber-200", children: isRecord ? "This field could not be found, so every field of the record is shown." : "This field could not be found, so the whole section is shown." }),
+      isFocused && focusSegments ? /* @__PURE__ */ jsxs6("div", { ref: focusAreaRef, className: "space-y-3", children: [
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-2 pb-2 border-b border-purple-500/20", children: [
+          /* @__PURE__ */ jsx7("span", { className: "text-[11px] font-semibold text-purple-200", children: "Editing one field" }),
+          /* @__PURE__ */ jsx7(
             "button",
             {
               type: "button",
@@ -1707,8 +1828,8 @@ var SectionEditorForm = ({
           focusValue,
           focusSegments
         )
-      ] }, focusPath) : CodeWidget && isCodeValue(formData) ? /* @__PURE__ */ jsxs5(Fragment2, { children: [
-        /* @__PURE__ */ jsx6(
+      ] }, focusPath) : CodeWidget && isCodeValue(formData) ? /* @__PURE__ */ jsxs6(Fragment2, { children: [
+        /* @__PURE__ */ jsx7(
           CodeWidget,
           {
             value: formData,
@@ -1726,12 +1847,12 @@ var SectionEditorForm = ({
             }
           }
         ),
-        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between pt-3 border-t border-purple-500/20", children: [
-          /* @__PURE__ */ jsxs5("span", { className: "text-xs text-slate-400 flex items-center gap-1.5", children: [
-            /* @__PURE__ */ jsx6("span", { className: `w-2 h-2 rounded-full ${isDirty ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}` }),
-            /* @__PURE__ */ jsx6("span", { children: isDirty ? "Unsaved edits in studio" : "Ready / Up to date" })
+        /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between pt-3 border-t border-purple-500/20", children: [
+          /* @__PURE__ */ jsxs6("span", { className: "text-xs text-slate-400 flex items-center gap-1.5", children: [
+            /* @__PURE__ */ jsx7("span", { className: `w-2 h-2 rounded-full ${isDirty ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}` }),
+            /* @__PURE__ */ jsx7("span", { children: isDirty ? "Unsaved edits in studio" : "Ready / Up to date" })
           ] }),
-          /* @__PURE__ */ jsxs5(
+          /* @__PURE__ */ jsxs6(
             "button",
             {
               type: "button",
@@ -1739,15 +1860,15 @@ var SectionEditorForm = ({
               onClick: handleSave,
               className: `inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md ${isSaving ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/60" : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40 active:scale-95"}`,
               children: [
-                /* @__PURE__ */ jsx6(Save, { className: "w-4 h-4 shrink-0" }),
-                /* @__PURE__ */ jsx6("span", { children: isSaving ? "Saving..." : "Save & Publish" })
+                /* @__PURE__ */ jsx7(Save, { className: "w-4 h-4 shrink-0" }),
+                /* @__PURE__ */ jsx7("span", { children: isSaving ? "Saving..." : "Save & Publish" })
               ]
             }
           )
         ] })
-      ] }) : formData && typeof formData === "object" ? /* @__PURE__ */ jsx6("div", { className: "space-y-3", children: Object.entries(formData).map(([key, val]) => renderField(key, val, [key])) }) : /* @__PURE__ */ jsx6("div", { className: "p-4 text-center text-xs text-slate-400", children: "No editable data found for this section." })
+      ] }) : formData && typeof formData === "object" ? /* @__PURE__ */ jsx7("div", { className: "space-y-3", children: Object.entries(formData).map(([key, val]) => renderField(key, val, [key])) }) : /* @__PURE__ */ jsx7("div", { className: "p-4 text-center text-xs text-slate-400", children: "No editable data found for this section." })
     ] }),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsx7(
       JsonInspectorModal,
       {
         isOpen: isJsonModalOpen,
@@ -1763,7 +1884,7 @@ var SectionEditorForm = ({
         }
       }
     ),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsx7(
       LivePreviewModal,
       {
         isOpen: isPreviewOpen,
@@ -1775,9 +1896,9 @@ var SectionEditorForm = ({
 };
 
 // src/admin/StylePanel.tsx
-import React7 from "react";
-import { Monitor as Monitor2, Tablet as Tablet2, Smartphone as Smartphone2, RotateCcw as RotateCcw2, Save as Save2, Loader2 as Loader22, X as X5 } from "lucide-react";
-import { Fragment as Fragment3, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
+import React8 from "react";
+import { Monitor as Monitor2, Tablet as Tablet2, Smartphone as Smartphone2, RotateCcw as RotateCcw2, Save as Save2, Loader2 as Loader22, X as X6 } from "lucide-react";
+import { Fragment as Fragment3, jsx as jsx8, jsxs as jsxs7 } from "react/jsx-runtime";
 var DEVICES = [
   { key: "desktop", style: "desktop", label: "Desktop", icon: Monitor2 },
   { key: "tablet", style: "tablet", label: "Tablet", icon: Tablet2 },
@@ -1792,18 +1913,18 @@ var Row = ({
   inheritedValue,
   onClear,
   children
-}) => /* @__PURE__ */ jsxs6("div", { className: "space-y-1", children: [
-  /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between gap-2", children: [
-    /* @__PURE__ */ jsx7("span", { className: "text-[11px] font-semibold text-slate-300", children: label }),
-    ownValue ? /* @__PURE__ */ jsx7("button", { type: "button", onClick: onClear, className: "text-slate-500 hover:text-rose-300", title: `Clear ${label}`, "aria-label": `Clear ${label}`, children: /* @__PURE__ */ jsx7(X5, { className: "w-3 h-3" }) }) : inheritedValue ? /* @__PURE__ */ jsxs6("span", { className: "text-[10px] text-slate-500", children: [
+}) => /* @__PURE__ */ jsxs7("div", { className: "space-y-1", children: [
+  /* @__PURE__ */ jsxs7("div", { className: "flex items-center justify-between gap-2", children: [
+    /* @__PURE__ */ jsx8("span", { className: "text-[11px] font-semibold text-slate-300", children: label }),
+    ownValue ? /* @__PURE__ */ jsx8("button", { type: "button", onClick: onClear, className: "text-slate-500 hover:text-rose-300", title: `Clear ${label}`, "aria-label": `Clear ${label}`, children: /* @__PURE__ */ jsx8(X6, { className: "w-3 h-3" }) }) : inheritedValue ? /* @__PURE__ */ jsxs7("span", { className: "text-[10px] text-slate-500", children: [
       "inherited: ",
       inheritedValue
     ] }) : null
   ] }),
   children
 ] });
-var Group = ({ title, children }) => /* @__PURE__ */ jsxs6("fieldset", { className: "space-y-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3", children: [
-  /* @__PURE__ */ jsx7("legend", { className: "px-1 text-[10px] font-bold uppercase tracking-wider text-purple-300", children: title }),
+var Group = ({ title, children }) => /* @__PURE__ */ jsxs7("fieldset", { className: "space-y-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3", children: [
+  /* @__PURE__ */ jsx8("legend", { className: "px-1 text-[10px] font-bold uppercase tracking-wider text-purple-300", children: title }),
   children
 ] });
 function pickerColor(value) {
@@ -1845,8 +1966,8 @@ var StylePanel = ({
     else delete style[styleDevice];
     onChange(style);
   };
-  const row = (label, prop, children) => /* @__PURE__ */ jsx7(Row, { label, ownValue: own[prop], inheritedValue: inherited(prop), onClear: () => set({ [prop]: void 0 }), children });
-  const textInput = (prop, placeholder) => /* @__PURE__ */ jsx7(
+  const row = (label, prop, children) => /* @__PURE__ */ jsx8(Row, { label, ownValue: own[prop], inheritedValue: inherited(prop), onClear: () => set({ [prop]: void 0 }), children });
+  const textInput = (prop, placeholder) => /* @__PURE__ */ jsx8(
     "input",
     {
       type: "text",
@@ -1857,17 +1978,17 @@ var StylePanel = ({
       className: inputClass
     }
   );
-  const presets = (prop, list) => list && Object.keys(list).length > 0 ? /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(list).map(([name, v]) => /* @__PURE__ */ jsx7("button", { type: "button", className: chipClass(own[prop] === v), onClick: () => set({ [prop]: v }), title: v, children: name }, name)) }) : null;
+  const presets = (prop, list) => list && Object.keys(list).length > 0 ? /* @__PURE__ */ jsx8("div", { className: "flex flex-wrap gap-1", children: Object.entries(list).map(([name, v]) => /* @__PURE__ */ jsx8("button", { type: "button", className: chipClass(own[prop] === v), onClick: () => set({ [prop]: v }), title: v, children: name }, name)) }) : null;
   const colorRow = (label, prop) => row(
     label,
     prop,
-    /* @__PURE__ */ jsxs6(Fragment3, { children: [
-      options?.colors && Object.keys(options.colors).length > 0 && /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.colors).map(([name, v]) => /* @__PURE__ */ jsxs6("button", { type: "button", className: `${chipClass(own[prop] === v)} flex items-center gap-1`, onClick: () => set({ [prop]: v }), title: v, children: [
-        /* @__PURE__ */ jsx7("span", { className: "w-3 h-3 rounded-full border border-white/30", style: { background: v } }),
+    /* @__PURE__ */ jsxs7(Fragment3, { children: [
+      options?.colors && Object.keys(options.colors).length > 0 && /* @__PURE__ */ jsx8("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.colors).map(([name, v]) => /* @__PURE__ */ jsxs7("button", { type: "button", className: `${chipClass(own[prop] === v)} flex items-center gap-1`, onClick: () => set({ [prop]: v }), title: v, children: [
+        /* @__PURE__ */ jsx8("span", { className: "w-3 h-3 rounded-full border border-white/30", style: { background: v } }),
         name
       ] }, name)) }),
-      /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5", children: [
-        /* @__PURE__ */ jsx7(
+      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ jsx8(
           "input",
           {
             type: "color",
@@ -1885,13 +2006,13 @@ var StylePanel = ({
     const keys = ["Top", "Right", "Bottom", "Left"].map((side) => `${group}${side}`);
     const all = (v) => set(Object.fromEntries(keys.map((k) => [k, v])));
     const allSame = keys.every((k) => own[k] && own[k] === own[keys[0]]) ? own[keys[0]] : void 0;
-    return /* @__PURE__ */ jsxs6("div", { className: "space-y-1", children: [
-      /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsx7("span", { className: "text-[11px] font-semibold text-slate-300 capitalize", children: group }),
-        keys.some((k) => own[k]) && /* @__PURE__ */ jsx7("button", { type: "button", onClick: () => all(void 0), className: "text-slate-500 hover:text-rose-300", "aria-label": `Clear ${group}`, children: /* @__PURE__ */ jsx7(X5, { className: "w-3 h-3" }) })
+    return /* @__PURE__ */ jsxs7("div", { className: "space-y-1", children: [
+      /* @__PURE__ */ jsxs7("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx8("span", { className: "text-[11px] font-semibold text-slate-300 capitalize", children: group }),
+        keys.some((k) => own[k]) && /* @__PURE__ */ jsx8("button", { type: "button", onClick: () => all(void 0), className: "text-slate-500 hover:text-rose-300", "aria-label": `Clear ${group}`, children: /* @__PURE__ */ jsx8(X6, { className: "w-3 h-3" }) })
       ] }),
-      options?.spacing && /* @__PURE__ */ jsx7("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.spacing).map(([name, v]) => /* @__PURE__ */ jsx7("button", { type: "button", className: chipClass(allSame === v), onClick: () => all(v), title: v, children: name }, name)) }),
-      /* @__PURE__ */ jsx7("div", { className: "grid grid-cols-4 gap-1", children: keys.map((k, i) => /* @__PURE__ */ jsx7(
+      options?.spacing && /* @__PURE__ */ jsx8("div", { className: "flex flex-wrap gap-1", children: Object.entries(options.spacing).map(([name, v]) => /* @__PURE__ */ jsx8("button", { type: "button", className: chipClass(allSame === v), onClick: () => all(v), title: v, children: name }, name)) }),
+      /* @__PURE__ */ jsx8("div", { className: "grid grid-cols-4 gap-1", children: keys.map((k, i) => /* @__PURE__ */ jsx8(
         "input",
         {
           type: "text",
@@ -1906,84 +2027,84 @@ var StylePanel = ({
       )) })
     ] });
   };
-  return /* @__PURE__ */ jsxs6("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
-    /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] text-slate-300", children: [
-      React7.createElement(currentDevice.icon, { className: "w-3.5 h-3.5 text-purple-300 shrink-0" }),
-      /* @__PURE__ */ jsxs6("span", { children: [
+  return /* @__PURE__ */ jsxs7("div", { className: "space-y-3", "data-cms-style-panel": true, children: [
+    /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] text-slate-300", children: [
+      React8.createElement(currentDevice.icon, { className: "w-3.5 h-3.5 text-purple-300 shrink-0" }),
+      /* @__PURE__ */ jsxs7("span", { children: [
         "Editing ",
-        /* @__PURE__ */ jsx7("strong", { className: "text-white", children: currentDevice.label }),
+        /* @__PURE__ */ jsx8("strong", { className: "text-white", children: currentDevice.label }),
         " styles.",
         styleDevice !== "desktop" ? ` Empty values use the ${styleDevice === "phone" ? "tablet or desktop" : "desktop"} value.` : " Switch device with the buttons above the preview."
       ] })
     ] }),
-    isImage ? /* @__PURE__ */ jsxs6(Fragment3, { children: [
-      /* @__PURE__ */ jsxs6(Group, { title: "Image size", children: [
-        /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
-          row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
-          row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
-          row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "e.g. 200") }))
+    isImage ? /* @__PURE__ */ jsxs7(Fragment3, { children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Image size", children: [
+        /* @__PURE__ */ jsxs7("div", { className: "grid grid-cols-3 gap-2", children: [
+          row("Width", "width", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
+          row("Max width", "maxWidth", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
+          row("Height", "height", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("height", "e.g. 200") }))
         ] }),
-        row("Aspect ratio", "aspectRatio", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        row("Aspect ratio", "aspectRatio", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("aspectRatio", { Square: "1 / 1", "4:3": "4 / 3", "3:2": "3 / 2", "16:9": "16 / 9", Portrait: "3 / 4" }),
           textInput("aspectRatio", "e.g. 16 / 9")
         ] }))
       ] }),
-      /* @__PURE__ */ jsxs6(Group, { title: "Fit & focus", children: [
-        row("Fit", "objectFit", /* @__PURE__ */ jsx7(Fragment3, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
-        row("Focus", "objectPosition", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Fit & focus", children: [
+        row("Fit", "objectFit", /* @__PURE__ */ jsx8(Fragment3, { children: presets("objectFit", { Cover: "cover", Contain: "contain", Fill: "fill", None: "none" }) })),
+        row("Focus", "objectPosition", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("objectPosition", { Center: "center", Top: "top", Bottom: "bottom", Left: "left", Right: "right" }),
           textInput("objectPosition", "e.g. 50% 20%")
         ] })),
-        row("Opacity", "opacity", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        row("Opacity", "opacity", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("opacity", { "100%": "1", "75%": "0.75", "50%": "0.5", "25%": "0.25" }),
           textInput("opacity", "0 to 1")
         ] }))
       ] }),
-      /* @__PURE__ */ jsxs6(Group, { title: "Corners & border", children: [
-        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Corners & border", children: [
+        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("borderRadius", options?.radii),
           textInput("borderRadius", "e.g. 12px")
         ] })),
-        row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
+        row("Border width", "borderWidth", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
         colorRow("Border colour", "borderColor")
       ] }),
-      /* @__PURE__ */ jsx7(Group, { title: "Spacing", children: sides("margin") })
-    ] }) : /* @__PURE__ */ jsxs6(Fragment3, { children: [
-      /* @__PURE__ */ jsxs6(Group, { title: "Typography", children: [
+      /* @__PURE__ */ jsx8(Group, { title: "Spacing", children: sides("margin") })
+    ] }) : /* @__PURE__ */ jsxs7(Fragment3, { children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Typography", children: [
         colorRow("Colour", "color"),
-        row("Font size", "fontSize", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        row("Font size", "fontSize", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("fontSize", options?.fontSizes),
           textInput("fontSize", "e.g. 2rem or 32px")
         ] })),
-        row("Weight", "fontWeight", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
-        fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ jsx7(Fragment3, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
-        /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-2 gap-2", children: [
-          row("Line height", "lineHeight", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("lineHeight", "e.g. 1.4") })),
-          row("Letter spacing", "letterSpacing", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("letterSpacing", "e.g. 0.02em") }))
+        row("Weight", "fontWeight", /* @__PURE__ */ jsx8(Fragment3, { children: presets("fontWeight", { Light: "300", Regular: "400", Medium: "500", Semibold: "600", Bold: "700", Black: "800" }) })),
+        fonts && fonts.length > 0 && row("Font", "fontFamily", /* @__PURE__ */ jsx8(Fragment3, { children: presets("fontFamily", Object.fromEntries(fonts.map((f) => [f, f]))) })),
+        /* @__PURE__ */ jsxs7("div", { className: "grid grid-cols-2 gap-2", children: [
+          row("Line height", "lineHeight", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("lineHeight", "e.g. 1.4") })),
+          row("Letter spacing", "letterSpacing", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("letterSpacing", "e.g. 0.02em") }))
         ] }),
-        row("Align", "textAlign", /* @__PURE__ */ jsx7(Fragment3, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
+        row("Align", "textAlign", /* @__PURE__ */ jsx8(Fragment3, { children: presets("textAlign", { Left: "left", Center: "center", Right: "right", Justify: "justify" }) }))
       ] }),
-      /* @__PURE__ */ jsxs6(Group, { title: "Spacing", children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Spacing", children: [
         sides("margin"),
         sides("padding")
       ] }),
-      /* @__PURE__ */ jsx7(Group, { title: "Size", children: /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-3 gap-2", children: [
-        row("Width", "width", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
-        row("Max width", "maxWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
-        row("Height", "height", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("height", "e.g. 200") }))
+      /* @__PURE__ */ jsx8(Group, { title: "Size", children: /* @__PURE__ */ jsxs7("div", { className: "grid grid-cols-3 gap-2", children: [
+        row("Width", "width", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("width", "e.g. 300 or 50%") })),
+        row("Max width", "maxWidth", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("maxWidth", "e.g. 600") })),
+        row("Height", "height", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("height", "e.g. 200") }))
       ] }) }),
-      /* @__PURE__ */ jsxs6(Group, { title: "Background & border", children: [
+      /* @__PURE__ */ jsxs7(Group, { title: "Background & border", children: [
         colorRow("Background", "backgroundColor"),
-        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs6(Fragment3, { children: [
+        row("Corner radius", "borderRadius", /* @__PURE__ */ jsxs7(Fragment3, { children: [
           presets("borderRadius", options?.radii),
           textInput("borderRadius", "e.g. 12px")
         ] })),
-        row("Border width", "borderWidth", /* @__PURE__ */ jsx7(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
+        row("Border width", "borderWidth", /* @__PURE__ */ jsx8(Fragment3, { children: textInput("borderWidth", "e.g. 1px") })),
         colorRow("Border colour", "borderColor")
       ] })
     ] }),
-    /* @__PURE__ */ jsxs6("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
-      /* @__PURE__ */ jsxs6(
+    /* @__PURE__ */ jsxs7("div", { className: "flex items-center justify-end gap-2 pt-1", children: [
+      /* @__PURE__ */ jsxs7(
         "button",
         {
           type: "button",
@@ -1991,12 +2112,12 @@ var StylePanel = ({
           disabled: isSaving || !hasSavedStyle,
           className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-amber-200 bg-amber-950/40 border border-amber-700/60 hover:bg-amber-900/60 disabled:opacity-40",
           children: [
-            /* @__PURE__ */ jsx7(RotateCcw2, { className: "w-3.5 h-3.5" }),
+            /* @__PURE__ */ jsx8(RotateCcw2, { className: "w-3.5 h-3.5" }),
             "Reset styles"
           ]
         }
       ),
-      /* @__PURE__ */ jsxs6(
+      /* @__PURE__ */ jsxs7(
         "button",
         {
           type: "button",
@@ -2004,7 +2125,7 @@ var StylePanel = ({
           disabled: isSaving,
           className: "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 border border-purple-400 disabled:opacity-50",
           children: [
-            isSaving ? /* @__PURE__ */ jsx7(Loader22, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsx7(Save2, { className: "w-3.5 h-3.5" }),
+            isSaving ? /* @__PURE__ */ jsx8(Loader22, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsx8(Save2, { className: "w-3.5 h-3.5" }),
             "Save & Publish"
           ]
         }
@@ -2014,7 +2135,7 @@ var StylePanel = ({
 };
 
 // src/admin/CanvasEditor.tsx
-import { Fragment as Fragment4, jsx as jsx8, jsxs as jsxs7 } from "react/jsx-runtime";
+import { Fragment as Fragment4, jsx as jsx9, jsxs as jsxs8 } from "react/jsx-runtime";
 var RECORD_SECTION = ":record";
 var DEVICE_VIEWPORTS = {
   desktop: { label: "Desktop", width: 1280, icon: Monitor3 },
@@ -2024,38 +2145,38 @@ var DEVICE_VIEWPORTS = {
 var CanvasEditor = ({ initialPage, onPageChange }) => {
   const { config, origins } = useStudio();
   const adapter = config.adapter;
-  const [activePage, setActivePage] = useState7(initialPage || config.pages[0]?.key || "");
+  const [activePage, setActivePage] = useState8(initialPage || config.pages[0]?.key || "");
   useEffect6(() => {
     if (initialPage) setActivePage(initialPage);
   }, [initialPage]);
-  const [device, setDevice] = useState7("desktop");
-  const [isEditModeActive, setIsEditModeActive] = useState7(true);
-  const [iframeKey, setIframeKey] = useState7(0);
-  const [isLoadingIframe, setIsLoadingIframe] = useState7(true);
+  const [device, setDevice] = useState8("desktop");
+  const [isEditModeActive, setIsEditModeActive] = useState8(true);
+  const [iframeKey, setIframeKey] = useState8(0);
+  const [isLoadingIframe, setIsLoadingIframe] = useState8(true);
   const pageDef = findPage(config, activePage);
   const groupPage = pageDef ? groupPageOf(config, pageDef) : void 0;
   const recordPages = groupPage ? recordPagesOf(config, groupPage) : [];
-  const [activeItem, setActiveItem] = useState7(null);
-  const [itemsByPage, setItemsByPage] = useState7({});
-  const [recordDetail, setRecordDetail] = useState7(null);
-  const [isLoadingRecord, setIsLoadingRecord] = useState7(false);
-  const [recordTarget, setRecordTarget] = useState7(null);
+  const [activeItem, setActiveItem] = useState8(null);
+  const [itemsByPage, setItemsByPage] = useState8({});
+  const [recordDetail, setRecordDetail] = useState8(null);
+  const [isLoadingRecord, setIsLoadingRecord] = useState8(false);
+  const [recordTarget, setRecordTarget] = useState8(null);
   const isRecordOpen = Boolean(recordTarget);
   const globalPage = findGlobalPage(config);
-  const globalSections = React8.useMemo(
+  const globalSections = React9.useMemo(
     () => globalPage && globalPage.key !== activePage ? globalPage.sections : [],
     [globalPage, activePage]
   );
-  const availableSections = React8.useMemo(() => {
+  const availableSections = React9.useMemo(() => {
     const sections = [...pageDef?.sections ?? [], ...globalSections];
     if (!recordTarget) return sections;
     const owner = config.pages.find((p) => p.collection === recordTarget.collection);
     return [{ key: RECORD_SECTION, label: `${owner?.title ?? recordTarget.collection}: ${recordTarget.label}`, icon: Database }, ...sections];
   }, [pageDef, globalSections, recordTarget, config.pages]);
   const pageSections = availableSections.filter((s) => !globalSections.includes(s));
-  const [activeSectionKey, setActiveSectionKey] = useState7(availableSections[0]?.key ?? "");
-  const [activeFieldPath, setActiveFieldPath] = useState7(null);
-  const [activeFieldKind, setActiveFieldKind] = useState7(null);
+  const [activeSectionKey, setActiveSectionKey] = useState8(availableSections[0]?.key ?? "");
+  const [activeFieldPath, setActiveFieldPath] = useState8(null);
+  const [activeFieldKind, setActiveFieldKind] = useState8(null);
   const hasUnsavedEdits = useRef3(false);
   const activeSectionRef = useRef3(activeSectionKey);
   activeSectionRef.current = activeSectionKey;
@@ -2063,16 +2184,16 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   recordTargetRef.current = recordTarget;
   const itemsRef = useRef3(itemsByPage);
   itemsRef.current = itemsByPage;
-  const [sectionDetail, setSectionDetail] = useState7(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState7(false);
-  const [isSectionListOpen, setIsSectionListOpen] = useState7(false);
+  const [sectionDetail, setSectionDetail] = useState8(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState8(false);
+  const [isSectionListOpen, setIsSectionListOpen] = useState8(false);
   const activeSection = availableSections.find((s) => s.key === activeSectionKey);
   const sectionPageDef = globalPage && globalSections.some((s) => s.key === activeSectionKey) ? globalPage : pageDef;
   const sectionPage = sectionPageDef?.key ?? activePage;
   const listedGlobalSections = globalPage?.listOnEveryPage === false ? globalSections.filter((s) => s.key === activeSectionKey) : globalSections;
   const iframeRef = useRef3(null);
   const viewportContainerRef = useRef3(null);
-  const [containerSize, setContainerSize] = useState7({
+  const [containerSize, setContainerSize] = useState8({
     width: 1e3,
     height: 800
   });
@@ -2356,10 +2477,10 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   };
   const stylesEnabled = config.styles?.enabled !== false;
   const isStyleTarget = stylesEnabled && Boolean(activeFieldPath) && activeSectionKey !== RECORD_SECTION;
-  const [formTab, setFormTab] = useState7("content");
-  const [styleSheet, setStyleSheet] = useState7(null);
-  const [fieldStyle, setFieldStyleDraft] = useState7(void 0);
-  const [isSavingStyle, setIsSavingStyle] = useState7(false);
+  const [formTab, setFormTab] = useState8("content");
+  const [styleSheet, setStyleSheet] = useState8(null);
+  const [fieldStyle, setFieldStyleDraft] = useState8(void 0);
+  const [isSavingStyle, setIsSavingStyle] = useState8(false);
   const showStyleTab = isStyleTarget && formTab === "style";
   const loadStyleSheet = useCallback(
     async (page) => {
@@ -2428,25 +2549,25 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
   const activeSectionDef = availableSections.find((s) => s.key === activeSectionKey);
   const currentSectionLabel = activeSectionDef?.label || activeSectionKey.replace(/([A-Z])/g, " $1");
   if (!pageDef) {
-    return /* @__PURE__ */ jsxs7("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
+    return /* @__PURE__ */ jsxs8("div", { className: "p-8 text-center text-sm text-slate-400 bg-slate-900/60 rounded-2xl border border-purple-500/20", children: [
       "No pages configured. Add pages to the ",
-      /* @__PURE__ */ jsx8("code", { className: "text-purple-300", children: "pages" }),
+      /* @__PURE__ */ jsx9("code", { className: "text-purple-300", children: "pages" }),
       " array of your CMS config."
     ] });
   }
-  return /* @__PURE__ */ jsxs7("div", { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs7("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
-      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 flex-wrap", children: [
-        /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
-          React8.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
-          /* @__PURE__ */ jsx8("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
-          /* @__PURE__ */ jsxs7("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
+  return /* @__PURE__ */ jsxs8("div", { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs8("div", { className: "p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-xl", children: [
+      /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-2 flex-wrap", children: [
+        /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/25 border border-purple-500/40 text-purple-200 shrink-0", children: [
+          React9.createElement(activePageIcon, { className: "w-3.5 h-3.5 text-purple-300" }),
+          /* @__PURE__ */ jsx9("span", { className: "font-bold text-white max-w-[150px] truncate", children: activePageTitle }),
+          /* @__PURE__ */ jsxs8("span", { className: "text-[10px] font-mono opacity-70 text-purple-300", children: [
             "(",
             currentRoute,
             ")"
           ] })
         ] }),
-        topLevelPages(config).length > 1 && /* @__PURE__ */ jsxs7(
+        topLevelPages(config).length > 1 && /* @__PURE__ */ jsxs8(
           "select",
           {
             value: groupPage?.key ?? activePage,
@@ -2456,20 +2577,20 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": "Page to edit",
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-purple-500/30 text-purple-200 focus:outline-none focus:border-purple-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ jsxs7("option", { value: p.key, children: [
+              topLevelPages(config).filter((p) => !p.global).map((p) => /* @__PURE__ */ jsxs8("option", { value: p.key, children: [
                 p.title,
                 " (",
                 p.collection ? p.route.replace(/\/\[[^\]]+\].*$/, "") || "/" : p.route,
                 ")"
               ] }, p.key)),
-              globalPage && /* @__PURE__ */ jsxs7("option", { value: globalPage.key, children: [
+              globalPage && /* @__PURE__ */ jsxs8("option", { value: globalPage.key, children: [
                 globalPage.title || "Site settings",
                 " (every page)"
               ] })
             ]
           }
         ),
-        groupPage && recordPages.length > 0 && /* @__PURE__ */ jsxs7(
+        groupPage && recordPages.length > 0 && /* @__PURE__ */ jsxs8(
           "select",
           {
             value: pageDef?.collection && activeItem ? `${pageDef.key}::${activeItem.id}` : "home",
@@ -2477,40 +2598,40 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             "aria-label": `Page of ${groupPage.title} to edit`,
             className: "text-xs px-2.5 py-1.5 rounded-xl bg-slate-950 border border-sky-500/40 text-sky-200 focus:outline-none focus:border-sky-400 max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate",
             children: [
-              !groupPage.collection && /* @__PURE__ */ jsxs7("option", { value: "home", children: [
+              !groupPage.collection && /* @__PURE__ */ jsxs8("option", { value: "home", children: [
                 groupPage.title,
                 " home (",
                 groupPage.route,
                 ")"
               ] }),
-              groupPage.collection && !activeItem && /* @__PURE__ */ jsx8("option", { value: "home", children: "Pick a record" }),
+              groupPage.collection && !activeItem && /* @__PURE__ */ jsx9("option", { value: "home", children: "Pick a record" }),
               recordPages.map((rp) => {
                 const state = itemsByPage[rp.key];
-                const options = !state || state.status === "loading" ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::loading`, children: [
+                const options = !state || state.status === "loading" ? /* @__PURE__ */ jsxs8("option", { disabled: true, value: `${rp.key}::loading`, children: [
                   "Loading ",
                   rp.title,
                   "..."
-                ] }) : state.status === "error" ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::error`, children: [
+                ] }) : state.status === "error" ? /* @__PURE__ */ jsxs8("option", { disabled: true, value: `${rp.key}::error`, children: [
                   rp.title,
                   ": could not load (",
                   state.message,
                   ")"
-                ] }) : state.items.length === 0 ? /* @__PURE__ */ jsxs7("option", { disabled: true, value: `${rp.key}::none`, children: [
+                ] }) : state.items.length === 0 ? /* @__PURE__ */ jsxs8("option", { disabled: true, value: `${rp.key}::none`, children: [
                   rp.title,
                   ": no records yet"
-                ] }) : state.items.map((item) => /* @__PURE__ */ jsx8("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
-                return recordPages.length > 1 ? /* @__PURE__ */ jsx8("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx8(React8.Fragment, { children: options }, rp.key);
+                ] }) : state.items.map((item) => /* @__PURE__ */ jsx9("option", { value: `${rp.key}::${item.id}`, children: item.label }, item.id));
+                return recordPages.length > 1 ? /* @__PURE__ */ jsx9("optgroup", { label: rp.title, children: options }, rp.key) : /* @__PURE__ */ jsx9(React9.Fragment, { children: options }, rp.key);
               })
             ]
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
-        /* @__PURE__ */ jsx8("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
+      /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-2.5 flex-wrap", children: [
+        /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl shrink-0", children: Object.keys(DEVICE_VIEWPORTS).map((mode) => {
           const conf = DEVICE_VIEWPORTS[mode];
           const Icon = conf.icon;
           const isCurrent = device === mode;
-          return /* @__PURE__ */ jsxs7(
+          return /* @__PURE__ */ jsxs8(
             "button",
             {
               type: "button",
@@ -2518,43 +2639,43 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isCurrent ? "bg-purple-900/80 text-purple-200 border border-purple-500/40 shadow-sm" : "text-slate-400 hover:text-white"}`,
               title: `${conf.label} (${conf.width}px)`,
               children: [
-                /* @__PURE__ */ jsx8(Icon, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsx8("span", { children: conf.label })
+                /* @__PURE__ */ jsx9(Icon, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ jsx9("span", { children: conf.label })
               ]
             },
             mode
           );
         }) }),
-        /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 shrink-0", children: [
-          /* @__PURE__ */ jsx8(
+        /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-1.5 shrink-0", children: [
+          /* @__PURE__ */ jsx9(
             "button",
             {
               type: "button",
               onClick: toggleEditMode,
               className: `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border shrink-0 ${isEditModeActive ? "bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-900/30" : "bg-slate-950/70 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800/60"}`,
               title: isEditModeActive ? "Edit Mode is ON. Click to turn OFF and interact with webpage normally." : "Edit Mode is OFF. Click to turn ON and enable section edit buttons.",
-              children: isEditModeActive ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
-                /* @__PURE__ */ jsx8("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
-                /* @__PURE__ */ jsx8(Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
-                /* @__PURE__ */ jsx8("span", { children: "Edit Mode" })
-              ] }) : /* @__PURE__ */ jsxs7(Fragment4, { children: [
-                /* @__PURE__ */ jsx8("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
-                /* @__PURE__ */ jsx8(Eye2, { className: "w-3 h-3 text-slate-400 shrink-0" }),
-                /* @__PURE__ */ jsx8("span", { children: "View Mode" })
+              children: isEditModeActive ? /* @__PURE__ */ jsxs8(Fragment4, { children: [
+                /* @__PURE__ */ jsx9("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" }),
+                /* @__PURE__ */ jsx9(Pencil, { className: "w-3 h-3 text-purple-200 shrink-0" }),
+                /* @__PURE__ */ jsx9("span", { children: "Edit Mode" })
+              ] }) : /* @__PURE__ */ jsxs8(Fragment4, { children: [
+                /* @__PURE__ */ jsx9("span", { className: "w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" }),
+                /* @__PURE__ */ jsx9(Eye2, { className: "w-3 h-3 text-slate-400 shrink-0" }),
+                /* @__PURE__ */ jsx9("span", { children: "View Mode" })
               ] })
             }
           ),
-          /* @__PURE__ */ jsx8(
+          /* @__PURE__ */ jsx9(
             "button",
             {
               type: "button",
               onClick: handleRefreshPreview,
               className: "p-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors",
               title: "Reload live canvas",
-              children: /* @__PURE__ */ jsx8(RotateCcw3, { className: "w-3.5 h-3.5" })
+              children: /* @__PURE__ */ jsx9(RotateCcw3, { className: "w-3.5 h-3.5" })
             }
           ),
-          /* @__PURE__ */ jsxs7(
+          /* @__PURE__ */ jsxs8(
             "a",
             {
               href: publicUrl(currentRoute, config.publicSiteUrl),
@@ -2563,18 +2684,18 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-medium transition-colors",
               title: "Open in new window",
               children: [
-                /* @__PURE__ */ jsx8(ExternalLink3, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsx8("span", { className: "hidden sm:inline", children: "Open Live" })
+                /* @__PURE__ */ jsx9(ExternalLink3, { className: "w-3.5 h-3.5" }),
+                /* @__PURE__ */ jsx9("span", { className: "hidden sm:inline", children: "Open Live" })
               ]
             }
           )
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs7("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
-      /* @__PURE__ */ jsxs7("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
-        /* @__PURE__ */ jsxs7("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
-          /* @__PURE__ */ jsxs7(
+    /* @__PURE__ */ jsxs8("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start", children: [
+      /* @__PURE__ */ jsxs8("div", { className: "lg:col-span-5 xl:col-span-5 flex flex-col space-y-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-80px)] overflow-y-auto pr-1 custom-scrollbar", children: [
+        /* @__PURE__ */ jsxs8("div", { className: "p-3 rounded-xl bg-slate-900/95 border border-purple-500/25 backdrop-blur-sm space-y-2.5 shadow-lg", children: [
+          /* @__PURE__ */ jsxs8(
             "button",
             {
               type: "button",
@@ -2583,19 +2704,19 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               "aria-controls": "cms-section-list",
               className: "w-full flex items-center justify-between gap-2 text-left rounded-lg -m-1 p-1 hover:bg-slate-800/50 transition-colors",
               children: [
-                /* @__PURE__ */ jsxs7("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
-                  /* @__PURE__ */ jsx8("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
-                  !isSectionListOpen && activeSection && /* @__PURE__ */ jsxs7("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
-                    activeSection.icon && /* @__PURE__ */ jsx8(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
-                    /* @__PURE__ */ jsx8("span", { className: "truncate", children: activeSection.label })
+                /* @__PURE__ */ jsxs8("span", { className: "min-w-0 flex items-center gap-1.5 text-xs", children: [
+                  /* @__PURE__ */ jsx9("span", { className: "font-bold text-white shrink-0", children: "Select Section to Edit:" }),
+                  !isSectionListOpen && activeSection && /* @__PURE__ */ jsxs8("span", { className: "flex items-center gap-1 min-w-0 px-2 py-0.5 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-100 font-semibold", children: [
+                    activeSection.icon && /* @__PURE__ */ jsx9(activeSection.icon, { className: "w-3 h-3 shrink-0 opacity-80" }),
+                    /* @__PURE__ */ jsx9("span", { className: "truncate", children: activeSection.label })
                   ] })
                 ] }),
-                /* @__PURE__ */ jsxs7("span", { className: "flex items-center gap-2 shrink-0", children: [
-                  /* @__PURE__ */ jsxs7("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
+                /* @__PURE__ */ jsxs8("span", { className: "flex items-center gap-2 shrink-0", children: [
+                  /* @__PURE__ */ jsxs8("span", { className: "text-[10px] font-mono text-purple-300 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-800/40", children: [
                     "Page: ",
                     currentRoute
                   ] }),
-                  /* @__PURE__ */ jsx8(
+                  /* @__PURE__ */ jsx9(
                     ChevronDown2,
                     {
                       className: `w-4 h-4 text-purple-300 transition-transform ${isSectionListOpen ? "rotate-180" : ""}`
@@ -2605,26 +2726,26 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               ]
             }
           ),
-          isSectionListOpen && /* @__PURE__ */ jsxs7(Fragment4, { children: [
-            /* @__PURE__ */ jsx8("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
-              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs7(React8.Fragment, { children: [
-                index === 1 && /* @__PURE__ */ jsxs7("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
-                  /* @__PURE__ */ jsx8(Globe, { className: "w-3 h-3" }),
-                  /* @__PURE__ */ jsx8("span", { children: "Site-wide: shown on every page" })
+          isSectionListOpen && /* @__PURE__ */ jsxs8(Fragment4, { children: [
+            /* @__PURE__ */ jsx9("div", { id: "cms-section-list", className: "flex flex-wrap gap-1.5", children: [pageSections, listedGlobalSections].map(
+              (list, index) => list.length === 0 ? null : /* @__PURE__ */ jsxs8(React9.Fragment, { children: [
+                index === 1 && /* @__PURE__ */ jsxs8("div", { className: "w-full flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800/60 text-[10px] font-bold uppercase tracking-wider text-emerald-300", children: [
+                  /* @__PURE__ */ jsx9(Globe, { className: "w-3 h-3" }),
+                  /* @__PURE__ */ jsx9("span", { children: "Site-wide: shown on every page" })
                 ] }),
                 list.map((sec) => {
                   const isSelected = sec.key === activeSectionKey;
                   const IconComponent = sec.icon;
-                  return /* @__PURE__ */ jsxs7(
+                  return /* @__PURE__ */ jsxs8(
                     "button",
                     {
                       type: "button",
                       onClick: () => handleSelectSection(sec.key),
                       className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected ? "bg-purple-600 text-white shadow-md shadow-purple-900/50 ring-1 ring-purple-400" : "bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 border border-slate-800"}`,
                       children: [
-                        IconComponent && /* @__PURE__ */ jsx8(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
-                        /* @__PURE__ */ jsx8("span", { children: sec.label }),
-                        isSelected && /* @__PURE__ */ jsx8(ChevronRight, { className: "w-3 h-3 text-purple-200" })
+                        IconComponent && /* @__PURE__ */ jsx9(IconComponent, { className: "w-3.5 h-3.5 opacity-80" }),
+                        /* @__PURE__ */ jsx9("span", { children: sec.label }),
+                        isSelected && /* @__PURE__ */ jsx9(ChevronRight, { className: "w-3 h-3 text-purple-200" })
                       ]
                     },
                     sec.key
@@ -2632,16 +2753,16 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 })
               ] }, index)
             ) }),
-            /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
-              /* @__PURE__ */ jsx8(MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
-              /* @__PURE__ */ jsx8("span", { children: "Selecting a section scrolls the preview on the right to it." })
+            /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-800/60", children: [
+              /* @__PURE__ */ jsx9(MousePointerClick, { className: "w-3.5 h-3.5 text-purple-400 shrink-0" }),
+              /* @__PURE__ */ jsx9("span", { children: "Selecting a section scrolls the preview on the right to it." })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsx8("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ jsxs7("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ jsx8(Loader23, { className: "w-6 h-6 animate-spin text-sky-400" }),
-          /* @__PURE__ */ jsx8("span", { children: "Loading record..." })
-        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ jsx8(
+        /* @__PURE__ */ jsx9("div", { className: "rounded-2xl bg-slate-900/80 border border-purple-500/20 p-3 sm:p-4 shadow-xl", children: activeSectionKey === RECORD_SECTION && isRecordOpen ? isLoadingRecord ? /* @__PURE__ */ jsxs8("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ jsx9(Loader23, { className: "w-6 h-6 animate-spin text-sky-400" }),
+          /* @__PURE__ */ jsx9("span", { children: "Loading record..." })
+        ] }) : recordDetail && recordDetail.id === recordTarget?.id && recordDetail.collection === recordTarget?.collection ? /* @__PURE__ */ jsx9(
           SectionEditorForm,
           {
             mode: "record",
@@ -2663,11 +2784,11 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             onReset: async () => void 0,
             onChangeDraft: handleRecordDraft
           }
-        ) : /* @__PURE__ */ jsx8("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ jsxs7("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
-          /* @__PURE__ */ jsx8(Loader23, { className: "w-6 h-6 animate-spin text-purple-400" }),
-          /* @__PURE__ */ jsx8("span", { children: "Loading section form..." })
-        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
-          isStyleTarget && /* @__PURE__ */ jsx8("div", { role: "tablist", "aria-label": "Field editor", className: "flex items-center gap-1 p-1 mb-3 bg-slate-950/70 border border-slate-800 rounded-xl", children: ["content", "style"].map((tab) => /* @__PURE__ */ jsx8(
+        ) : /* @__PURE__ */ jsx9("div", { className: "p-8 text-center text-xs text-slate-400", children: "This record could not be loaded." }) : isLoadingDetail ? /* @__PURE__ */ jsxs8("div", { className: "h-64 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs", children: [
+          /* @__PURE__ */ jsx9(Loader23, { className: "w-6 h-6 animate-spin text-purple-400" }),
+          /* @__PURE__ */ jsx9("span", { children: "Loading section form..." })
+        ] }) : sectionDetail && sectionDetail.sectionKey === activeSectionKey && sectionDetail.page === sectionPage ? /* @__PURE__ */ jsxs8(Fragment4, { children: [
+          isStyleTarget && /* @__PURE__ */ jsx9("div", { role: "tablist", "aria-label": "Field editor", className: "flex items-center gap-1 p-1 mb-3 bg-slate-950/70 border border-slate-800 rounded-xl", children: ["content", "style"].map((tab) => /* @__PURE__ */ jsx9(
             "button",
             {
               type: "button",
@@ -2679,7 +2800,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
             },
             tab
           )) }),
-          showStyleTab && /* @__PURE__ */ jsx8(
+          showStyleTab && /* @__PURE__ */ jsx9(
             StylePanel,
             {
               value: fieldStyle,
@@ -2694,7 +2815,7 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               hasSavedStyle: hasFieldStyle(savedFieldStyle)
             }
           ),
-          /* @__PURE__ */ jsx8("div", { hidden: showStyleTab, children: /* @__PURE__ */ jsx8(
+          /* @__PURE__ */ jsx9("div", { hidden: showStyleTab, children: /* @__PURE__ */ jsx9(
             SectionEditorForm,
             {
               page: sectionPage,
@@ -2717,39 +2838,39 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
               onChangeDraft: handleDraftChange
             }
           ) })
-        ] }) : /* @__PURE__ */ jsx8("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
+        ] }) : /* @__PURE__ */ jsx9("div", { className: "p-8 text-center text-xs text-slate-400", children: "Select a section to begin editing." }) })
       ] }),
-      /* @__PURE__ */ jsxs7("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
-        /* @__PURE__ */ jsxs7("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
-          /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-2 min-w-0", children: [
-            /* @__PURE__ */ jsx8(
+      /* @__PURE__ */ jsxs8("div", { className: "lg:col-span-7 xl:col-span-7 flex flex-col space-y-3", children: [
+        /* @__PURE__ */ jsxs8("div", { className: "px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/25 flex items-center justify-between gap-2 text-xs text-purple-200 shadow-md", children: [
+          /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-2 min-w-0", children: [
+            /* @__PURE__ */ jsx9(
               "span",
               {
                 className: `w-2 h-2 rounded-full shrink-0 ${isEditModeActive ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`
               }
             ),
-            /* @__PURE__ */ jsx8("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ jsxs7(Fragment4, { children: [
+            /* @__PURE__ */ jsx9("span", { className: "truncate", children: isEditModeActive ? /* @__PURE__ */ jsxs8(Fragment4, { children: [
               "Live Interactive Canvas: ",
-              /* @__PURE__ */ jsx8("strong", { className: "text-white", children: currentSectionLabel }),
+              /* @__PURE__ */ jsx9("strong", { className: "text-white", children: currentSectionLabel }),
               " is active in editor."
-            ] }) : /* @__PURE__ */ jsxs7(Fragment4, { children: [
+            ] }) : /* @__PURE__ */ jsxs8(Fragment4, { children: [
               "Normal Webpage Mode: Interacting normally without edit buttons. Toggle ",
-              /* @__PURE__ */ jsx8("strong", { children: "Edit Mode ON" }),
+              /* @__PURE__ */ jsx9("strong", { children: "Edit Mode ON" }),
               " to edit."
             ] }) })
           ] }),
-          /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
-            /* @__PURE__ */ jsx8(CheckCircle22, { className: "w-3.5 h-3.5" }),
-            /* @__PURE__ */ jsx8("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
+          /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-1 text-[11px] text-emerald-300 shrink-0", children: [
+            /* @__PURE__ */ jsx9(CheckCircle22, { className: "w-3.5 h-3.5" }),
+            /* @__PURE__ */ jsx9("span", { children: isEditModeActive ? "Edit Mode ON" : "Normal View" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs7(
+        /* @__PURE__ */ jsxs8(
           "div",
           {
             ref: viewportContainerRef,
             className: "relative min-h-[750px] h-[calc(100vh-160px)] bg-slate-950 rounded-2xl border border-purple-500/20 shadow-2xl p-2 sm:p-4 flex flex-col items-center justify-start overflow-hidden",
             children: [
-              /* @__PURE__ */ jsx8(
+              /* @__PURE__ */ jsx9(
                 "div",
                 {
                   className: "absolute inset-0 pointer-events-none opacity-20",
@@ -2759,9 +2880,9 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                   }
                 }
               ),
-              isLoadingIframe && /* @__PURE__ */ jsxs7("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
-                /* @__PURE__ */ jsx8(Loader23, { className: "w-8 h-8 text-purple-400 animate-spin" }),
-                /* @__PURE__ */ jsx8("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
+              isLoadingIframe && /* @__PURE__ */ jsxs8("div", { className: "absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm gap-2", children: [
+                /* @__PURE__ */ jsx9(Loader23, { className: "w-8 h-8 text-purple-400 animate-spin" }),
+                /* @__PURE__ */ jsx9("span", { className: "text-xs text-slate-400", children: "Loading interactive preview..." })
               ] }),
               (() => {
                 const targetWidth = DEVICE_VIEWPORTS[device].width;
@@ -2769,12 +2890,12 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                 const availH = Math.max(containerSize.height - 24, 400);
                 const scale = availW < targetWidth ? availW / targetWidth : 1;
                 const unscaledHeight = availH / scale;
-                return /* @__PURE__ */ jsx8(
+                return /* @__PURE__ */ jsx9(
                   "div",
                   {
                     className: "w-full h-full flex items-start justify-center overflow-hidden",
                     style: { width: `${availW}px`, height: `${availH}px` },
-                    children: /* @__PURE__ */ jsxs7(
+                    children: /* @__PURE__ */ jsxs8(
                       "div",
                       {
                         style: {
@@ -2785,8 +2906,8 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
                         },
                         className: `shrink-0 transition-all duration-200 overflow-hidden shadow-2xl border ${device === "mobile" ? "border-slate-700 bg-slate-900 rounded-[38px] p-2 ring-8 ring-slate-800" : device === "tablet" ? "border-slate-700 bg-slate-900 rounded-[28px] p-2 ring-4 ring-slate-800" : "border-slate-800 bg-white rounded-xl"}`,
                         children: [
-                          device === "mobile" && /* @__PURE__ */ jsx8("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ jsx8("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
-                          isWaitingForRecord ? /* @__PURE__ */ jsx8("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ jsx8(
+                          device === "mobile" && /* @__PURE__ */ jsx9("div", { className: "w-24 h-4 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center", children: /* @__PURE__ */ jsx9("div", { className: "w-2 h-2 rounded-full bg-slate-900" }) }),
+                          isWaitingForRecord ? /* @__PURE__ */ jsx9("div", { className: "w-full h-full flex items-center justify-center bg-slate-900 text-xs text-slate-400 p-6 text-center", children: "Pick a record in the menu next to the page name to preview it." }) : /* @__PURE__ */ jsx9(
                             "iframe",
                             {
                               ref: iframeRef,
@@ -2812,13 +2933,13 @@ var CanvasEditor = ({ initialPage, onPageChange }) => {
 };
 
 // src/admin/CmsStudio.tsx
-import { jsx as jsx9, jsxs as jsxs8 } from "react/jsx-runtime";
+import { jsx as jsx10, jsxs as jsxs9 } from "react/jsx-runtime";
 function StudioContent({ config, initialPage, onPageChange }) {
   const firstPage = config.pages[0]?.key ?? "";
-  const [activePage, setActivePage] = useState8(
+  const [activePage, setActivePage] = useState9(
     initialPage && findPage(config, initialPage) ? initialPage : firstPage
   );
-  const [isGlobalPreviewOpen, setIsGlobalPreviewOpen] = useState8(false);
+  const [isGlobalPreviewOpen, setIsGlobalPreviewOpen] = useState9(false);
   useEffect7(() => {
     if (initialPage && findPage(config, initialPage)) setActivePage(initialPage);
   }, [initialPage, config]);
@@ -2826,30 +2947,30 @@ function StudioContent({ config, initialPage, onPageChange }) {
     setActivePage(page);
     if (onPageChange) onPageChange(page);
   };
-  return /* @__PURE__ */ jsxs8("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
-    /* @__PURE__ */ jsxs8("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
-      /* @__PURE__ */ jsxs8("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ jsx9("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ jsx9(Globe2, { className: "w-6 h-6" }) }),
-        /* @__PURE__ */ jsxs8("div", { children: [
-          /* @__PURE__ */ jsx9("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
-          /* @__PURE__ */ jsx9("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
+  return /* @__PURE__ */ jsxs9("div", { className: "p-4 sm:p-6 lg:p-8 space-y-6 text-white mx-auto max-w-[1920px]", children: [
+    /* @__PURE__ */ jsxs9("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4", children: [
+      /* @__PURE__ */ jsxs9("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ jsx10("div", { className: "p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400", children: /* @__PURE__ */ jsx10(Globe2, { className: "w-6 h-6" }) }),
+        /* @__PURE__ */ jsxs9("div", { children: [
+          /* @__PURE__ */ jsx10("h1", { className: "text-2xl sm:text-3xl font-extrabold tracking-tight text-white", children: config.title || "Site CMS" }),
+          /* @__PURE__ */ jsx10("p", { className: "text-xs sm:text-sm text-slate-400 mt-1", children: "Hover over any section in the live preview, or select one from the editor panel." })
         ] })
       ] }),
-      /* @__PURE__ */ jsx9("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs8(
+      /* @__PURE__ */ jsx10("div", { className: "flex items-center gap-3", children: /* @__PURE__ */ jsxs9(
         "button",
         {
           type: "button",
           onClick: () => setIsGlobalPreviewOpen(true),
           className: "flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition-all",
           children: [
-            /* @__PURE__ */ jsx9(Eye3, { className: "w-4 h-4" }),
-            /* @__PURE__ */ jsx9("span", { children: "Launch Live Preview" })
+            /* @__PURE__ */ jsx10(Eye3, { className: "w-4 h-4" }),
+            /* @__PURE__ */ jsx10("span", { children: "Launch Live Preview" })
           ]
         }
       ) })
     ] }),
-    /* @__PURE__ */ jsx9(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
-    /* @__PURE__ */ jsx9(
+    /* @__PURE__ */ jsx10(CanvasEditor, { initialPage: activePage, onPageChange: changePage }),
+    /* @__PURE__ */ jsx10(
       LivePreviewModal,
       {
         isOpen: isGlobalPreviewOpen,
@@ -2861,15 +2982,15 @@ function StudioContent({ config, initialPage, onPageChange }) {
 }
 var CmsStudio = (props) => {
   const { config, toaster = true } = props;
-  return /* @__PURE__ */ jsxs8(StudioProvider, { config, children: [
-    /* @__PURE__ */ jsx9("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ jsx9(StudioContent, { ...props }) }),
-    toaster && /* @__PURE__ */ jsx9(Toaster, { position: "top-right" })
+  return /* @__PURE__ */ jsxs9(StudioProvider, { config, children: [
+    /* @__PURE__ */ jsx10("div", { className: "min-h-full bg-slate-950", children: /* @__PURE__ */ jsx10(StudioContent, { ...props }) }),
+    toaster && /* @__PURE__ */ jsx10(Toaster, { position: "top-right" })
   ] });
 };
 
 // src/admin/CmsNavButton.tsx
 import { Globe as Globe3 } from "lucide-react";
-import { jsx as jsx10, jsxs as jsxs9 } from "react/jsx-runtime";
+import { jsx as jsx11, jsxs as jsxs10 } from "react/jsx-runtime";
 var CmsNavButton = ({
   href,
   active = false,
@@ -2877,7 +2998,7 @@ var CmsNavButton = ({
   as: Component = "a",
   className,
   ...rest
-}) => /* @__PURE__ */ jsxs9(
+}) => /* @__PURE__ */ jsxs10(
   Component,
   {
     href,
@@ -2885,24 +3006,24 @@ var CmsNavButton = ({
     className: className ?? `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800/80"}`,
     ...rest,
     children: [
-      /* @__PURE__ */ jsx10(Globe3, { className: "w-5 h-5" }),
-      /* @__PURE__ */ jsx10("span", { children: label })
+      /* @__PURE__ */ jsx11(Globe3, { className: "w-5 h-5" }),
+      /* @__PURE__ */ jsx11("span", { children: label })
     ]
   }
 );
 
 // src/admin/CmsAuth.tsx
-import { useCallback as useCallback2, useEffect as useEffect8, useState as useState9 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect8, useState as useState10 } from "react";
 import { Loader2 as Loader24, Lock as Lock2, LogOut } from "lucide-react";
-import { Fragment as Fragment5, jsx as jsx11, jsxs as jsxs10 } from "react/jsx-runtime";
+import { Fragment as Fragment5, jsx as jsx12, jsxs as jsxs11 } from "react/jsx-runtime";
 function safeNext(value) {
   return value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : null;
 }
 var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirectTo = "/" }) => {
-  const [username, setUsername] = useState9("");
-  const [password, setPassword] = useState9("");
-  const [error, setError] = useState9("");
-  const [busy, setBusy] = useState9(false);
+  const [username, setUsername] = useState10("");
+  const [password, setPassword] = useState10("");
+  const [error, setError] = useState10("");
+  const [busy, setBusy] = useState10(false);
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -2919,29 +3040,29 @@ var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirect
     }
   };
   const field = "w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30";
-  return /* @__PURE__ */ jsx11("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ jsxs10("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
-    /* @__PURE__ */ jsxs10("div", { className: "flex flex-col items-center gap-3 text-center", children: [
-      /* @__PURE__ */ jsx11("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ jsx11(Lock2, { className: "h-6 w-6" }) }),
-      /* @__PURE__ */ jsx11("h1", { className: "text-xl font-bold", children: title }),
-      /* @__PURE__ */ jsx11("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
+  return /* @__PURE__ */ jsx12("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-10 text-white", children: /* @__PURE__ */ jsxs11("form", { onSubmit: submit, className: "w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl", children: [
+    /* @__PURE__ */ jsxs11("div", { className: "flex flex-col items-center gap-3 text-center", children: [
+      /* @__PURE__ */ jsx12("div", { className: "rounded-xl border border-purple-500/30 bg-purple-600/20 p-3 text-purple-400", children: /* @__PURE__ */ jsx12(Lock2, { className: "h-6 w-6" }) }),
+      /* @__PURE__ */ jsx12("h1", { className: "text-xl font-bold", children: title }),
+      /* @__PURE__ */ jsx12("p", { className: "text-xs text-slate-400", children: "Use your staff username and password." })
     ] }),
-    /* @__PURE__ */ jsxs10("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ jsxs11("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Username",
-      /* @__PURE__ */ jsx11("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
+      /* @__PURE__ */ jsx12("input", { className: field, value: username, onChange: (e) => setUsername(e.target.value), autoComplete: "username", autoFocus: true, required: true })
     ] }),
-    /* @__PURE__ */ jsxs10("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
+    /* @__PURE__ */ jsxs11("label", { className: "block space-y-1.5 text-xs font-semibold text-slate-300", children: [
       "Password",
-      /* @__PURE__ */ jsx11("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
+      /* @__PURE__ */ jsx12("input", { className: field, type: "password", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password", required: true })
     ] }),
-    error && /* @__PURE__ */ jsx11("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
-    /* @__PURE__ */ jsxs10(
+    error && /* @__PURE__ */ jsx12("p", { role: "alert", className: "rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300", children: error }),
+    /* @__PURE__ */ jsxs11(
       "button",
       {
         type: "submit",
         disabled: busy,
         className: "flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-purple-500 disabled:opacity-60",
         children: [
-          busy && /* @__PURE__ */ jsx11(Loader24, { className: "h-4 w-4 animate-spin" }),
+          busy && /* @__PURE__ */ jsx12(Loader24, { className: "h-4 w-4 animate-spin" }),
           busy ? "Signing in..." : "Sign in"
         ]
       }
@@ -2949,8 +3070,8 @@ var CmsLogin = ({ auth, title = "Sign in to edit your site", onSuccess, redirect
   ] }) });
 };
 var CmsAuthGate = ({ auth, loginPath, title, children }) => {
-  const [state, setState] = useState9("checking");
-  const [message, setMessage] = useState9("");
+  const [state, setState] = useState10("checking");
+  const [message, setMessage] = useState10("");
   const verify = useCallback2(async () => {
     if (loginPath && window.location.pathname === loginPath) {
       setState("login-page");
@@ -2974,17 +3095,17 @@ var CmsAuthGate = ({ auth, loginPath, title, children }) => {
   useEffect8(() => {
     void verify();
   }, [verify]);
-  if (state === "in" || state === "login-page") return /* @__PURE__ */ jsx11(Fragment5, { children });
-  if (state === "out") return /* @__PURE__ */ jsx11(CmsLogin, { auth, title, onSuccess: () => void verify() });
+  if (state === "in" || state === "login-page") return /* @__PURE__ */ jsx12(Fragment5, { children });
+  if (state === "out") return /* @__PURE__ */ jsx12(CmsLogin, { auth, title, onSuccess: () => void verify() });
   if (state === "error") {
-    return /* @__PURE__ */ jsxs10("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
-      /* @__PURE__ */ jsx11("p", { className: "text-sm text-slate-300", children: message }),
-      /* @__PURE__ */ jsx11("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
+    return /* @__PURE__ */ jsxs11("div", { className: "flex min-h-[40vh] flex-col items-center justify-center gap-3 px-4 text-center text-white", children: [
+      /* @__PURE__ */ jsx12("p", { className: "text-sm text-slate-300", children: message }),
+      /* @__PURE__ */ jsx12("button", { type: "button", onClick: () => void verify(), className: "rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold hover:bg-purple-500", children: "Try again" })
     ] });
   }
-  return /* @__PURE__ */ jsx11("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ jsx11(Loader24, { className: "h-6 w-6 animate-spin" }) });
+  return /* @__PURE__ */ jsx12("div", { className: "flex min-h-[40vh] items-center justify-center text-slate-400", role: "status", "aria-label": "Checking your sign-in", children: /* @__PURE__ */ jsx12(Loader24, { className: "h-6 w-6 animate-spin" }) });
 };
-var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ jsx11(
+var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @__PURE__ */ jsx12(
   "button",
   {
     type: "button",
@@ -2993,8 +3114,8 @@ var CmsLogoutButton = ({ auth, redirectTo = "/", className, children }) => /* @_
       auth.logout();
       window.location.assign(redirectTo);
     },
-    children: children ?? /* @__PURE__ */ jsxs10(Fragment5, { children: [
-      /* @__PURE__ */ jsx11(LogOut, { className: "h-3.5 w-3.5" }),
+    children: children ?? /* @__PURE__ */ jsxs11(Fragment5, { children: [
+      /* @__PURE__ */ jsx12(LogOut, { className: "h-3.5 w-3.5" }),
       " Sign out"
     ] })
   }

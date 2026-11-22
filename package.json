@@ -1,6 +1,6 @@
 {
   "name": "@brainicon/storio-elements-editor",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Visual headless CMS for React and Next.js: live preview canvas, hover-to-edit sections and a JSON-driven form editor, with pluggable storage.",
   "license": "MIT",
   "author": "Brainicon Technology",

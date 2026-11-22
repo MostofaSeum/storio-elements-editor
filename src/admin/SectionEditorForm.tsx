@@ -11,6 +11,7 @@ import { JsonInspectorModal } from './JsonInspectorModal';
 import { LivePreviewModal } from './LivePreviewModal';
 import { VisualImagePicker } from './VisualImagePicker';
 import { VisualIconPicker } from './VisualIconPicker';
+import { TagInput, isTagListField } from './TagInput';
 import { useStudio } from './StudioContext';
 
 export interface SectionEditorFormProps {
@@ -523,6 +524,26 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
             className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-700 cursor-pointer"
           />
         </div>
+      );
+    }
+
+    // 4a. Keywords, tags: a tag input instead of one box per item
+    if (isTagListField(key, value)) {
+      const tagLimit = getArrayLimit(path);
+      return (
+        <TagInput
+          key={fieldId}
+          label={key.replace(/([A-Z])/g, ' $1')}
+          fieldId={fieldId}
+          value={value}
+          max={tagLimit?.max}
+          hint={
+            /keywords?$/i.test(key)
+              ? 'Enter or comma adds a keyword; paste a comma-separated list to add many. Google does not use meta keywords for ranking.'
+              : undefined
+          }
+          onChange={(next) => handleFieldChange(path, next)}
+        />
       );
     }
 
