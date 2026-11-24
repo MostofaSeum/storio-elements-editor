@@ -35,7 +35,7 @@ Safety rules (most important):
 
 Steps:
 1. Check the project: Next.js App Router (app/ or src/app/), TypeScript, Tailwind CSS v4, Node 18.18+. Find the admin panel (folders like admin, dashboard, or a route group like (admin)), and find out whether there is a Django backend (a folder with manage.py). Then list every page file under app/ or src/app/ (page.tsx, page.jsx or page.js) that visitors open, leaving out the admin area, api/, login and other auth pages, the CMS screen, and error or not-found pages. Write the list down with each page's URL: every page on it must be made editable in step 5. If package.json already lists @brainicon/visual-cms (the old name of this library), follow the README section "Upgrading from @brainicon/visual-cms" instead of steps 2 and 3, then continue with step 4.
-2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.3.4   then check: npx storio-editor --version
+2. Install: npm install github:MostofaSeum/storio-elements-editor#v1.4.0   then check: npx storio-editor --version
 3. Set it up with `npx storio-editor init --yes --no-example` (--no-example: this is a real project, so do not create the demo page at /cms-example):
    - with Django: add --django-dir <folder with manage.py> (and --api-url / --frontend-origin if the ports are not 8000 / 3000). This also sets up Django: package, settings, urls, CORS, migration.
    - if the admin panel lives under app/, add --admin-path "<admin folder>/cms" so the CMS screen sits behind the admin login.
@@ -81,13 +81,13 @@ Steps:
 In your Next.js project:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.4
+npm install github:MostofaSeum/storio-elements-editor#v1.4.0
 ```
 
-`#v1.3.4` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
+`#v1.4.0` pins a released version (see the repository's tags). You import it as `@brainicon/storio-elements-editor`. Check that it worked:
 
 ```bash
-npx storio-editor --version     # prints 1.3.4
+npx storio-editor --version     # prints 1.4.0
 ```
 
 ### Step 2. Run the setup command
@@ -307,7 +307,7 @@ Copy the prompt from [the top of this README](#let-your-ai-agent-do-it) into you
 **Step 3. Install the library.**
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.4
+npm install github:MostofaSeum/storio-elements-editor#v1.4.0
 npx storio-editor --version
 ```
 
@@ -836,7 +836,7 @@ A copy of each edited file is saved next to it as `*.storio-editor.bak`. Running
 You can also run the Django part on its own, without the Next.js part:
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.4.0#subdirectory=django-storio-elements-editor"
 python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000 [--dry-run] [--no-cors] [--no-migrate]
 ```
 
@@ -894,17 +894,19 @@ Add `<CmsLogoutButton auth={cmsLogin} redirectTo="/admin/login" />` to your admi
 | `LOGIN_MAX_ATTEMPTS` | `5` | wrong passwords per username and address before a lockout |
 | `LOGIN_LOCKOUT_SECONDS` | `300` | how long the lockout lasts |
 | `AUTHORIZE` | staff users | dotted path of your own `can_edit(request) -> bool`; it also decides who gets a token |
+| `AUTHENTICATE` | none | dotted path of your own `get_user(request) -> user or None` for your own login token (JWT, SSO…). Asked only when the request has an `Authorization` header. The user it returns counts as signed in: no CSRF token needed, and saves record them as `updatedBy` |
+| `UPLOAD_DIR` | `"cms-uploads"` | folder for uploads inside your media storage, or a function `(request) -> folder`, for example one folder per tenant. Only safe relative folders are accepted |
 
 **Other ways to sign in.**
 
 - **Django's own login page** (same domain only): run `init` with `--auth session`, or remove `cmsAuth` from the config. Editors then log in at the Django admin first and the CMS uses that session.
-- **Your own login system (JWT, SSO…)**: write `can_edit(request)` for Django, set it as `STORIO_EDITOR["AUTHORIZE"]`, and send your token with `djangoAdapter({ baseUrl, headers: () => ({ Authorization: \`Bearer ${yourToken()}\` }) })`. A request that carries the library's own token is recognised first; anything else reaches your function with the normal `request`.
+- **Your own login system (JWT, SSO…)**: write `can_edit(request)` for Django, set it as `STORIO_EDITOR["AUTHORIZE"]`, and send your token with `djangoAdapter({ baseUrl, headers: () => ({ Authorization: \`Bearer ${yourToken()}\` }) })`. A request that carries the library's own token is recognised first; anything else reaches your function with the normal `request`. To also skip the CSRF check and record the editor as `updatedBy`, set `STORIO_EDITOR["AUTHENTICATE"]` to a function that returns the user for your token, read from the `Authorization` header. With Django REST framework you can reuse your authentication class: `return JWTAuthentication().authenticate(request)` (the `(user, token)` result is accepted).
 
 **Existing project?** Update the package and the npm library ([section 9](#9-updating)), then in `cms.config.ts` add `import { cmsAuth } from '@brainicon/storio-elements-editor/adapters'`, `export const cmsLogin = cmsAuth({ baseUrl: <your API URL> })` and `headers: cmsLogin.headers` in `djangoAdapter(...)`, and wrap the CMS screen in `<CmsAuthGate auth={cmsLogin}>`. `npx storio-editor doctor` checks the result.
 
 #### By hand
 
-Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
+Install the package (`pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.4.0#subdirectory=django-storio-elements-editor"`), add `"storio_elements_editor"` to `INSTALLED_APPS`, add `path("api/cms/", include("storio_elements_editor.urls"))` to the root `urls.py`, run `python manage.py migrate`, and configure CORS and `CSRF_TRUSTED_ORIGINS` as described in [django-storio-elements-editor/README.md](django-storio-elements-editor/README.md). On the frontend run `npx storio-editor init --backend django --api-url https://api.example.com/api/cms`. This generates `cms.config.ts` with `djangoAdapter`, which sends the editor's token (or Django session cookie) and handles Django's CSRF token. No Next.js API route or `fileStorage` is created.
 
 ### Your own backend
 
@@ -955,8 +957,8 @@ interface CmsStorageAdapter {
 | the sign-in form says "This account is not allowed to edit the site" | the account is not staff (or your `AUTHORIZE` function says no) | set `is_staff` on the user in the Django admin |
 | the sign-in form says "Too many failed attempts" | 5 wrong passwords for that username from this address | wait 5 minutes (`LOGIN_LOCKOUT_SECONDS`) |
 | the sign-in form says "Token login is not available on this server" | `django-storio-elements-editor` is older than 0.4 or `TOKEN_LOGIN` is `False` | upgrade the package ([section 9](#9-updating)); `npx storio-editor doctor` says which |
-| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.3.4` in the project root, then retry |
-| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.3.4` |
+| `npx storio-editor` tries to download something, or says not found | the library is not installed in this project, or you are in the wrong folder | run `npm install github:MostofaSeum/storio-elements-editor#v1.4.0` in the project root, then retry |
+| "Invalid hook call", or `Cannot read properties of null (reading 'useState')` | two copies of React, usually from linking a local clone of the library (`npm link`, `file:` path) | install from GitHub instead: remove `node_modules/@brainicon`, then `npm install github:MostofaSeum/storio-elements-editor#v1.4.0` |
 | the CMS screen has no styling | the Tailwind `@source` line is missing or points to the wrong place, or Tailwind is v3 | open the CSS file your root layout imports; it must contain `@source "…/node_modules/@brainicon/storio-elements-editor/dist";` below `@import "tailwindcss";` |
 | the preview shows "Loading…" forever, or is blank | the page's `route` in `cms.config.ts` is wrong, the page throws an error, a redirect catches the preview, or the site blocks being framed | open the route in a normal tab; check `middleware.ts` ([below](#redirects-and-the-preview-iframe)); remove `X-Frame-Options: DENY` |
 | hovering shows no pencil | the block is not wrapped in `<CmsSection>`, `CmsProviders` is missing from the root layout, or Edit Mode is off | wrap the block; check `app/layout.tsx`; turn Edit Mode on in the toolbar |
@@ -1188,11 +1190,11 @@ if (!isCmsPreviewRequest(request, { studioPath: '/admin/cms' })) {
 Install a newer release by its tag, then restart the dev server:
 
 ```bash
-npm install github:MostofaSeum/storio-elements-editor#v1.3.4     # use the new tag
+npm install github:MostofaSeum/storio-elements-editor#v1.4.0     # use the new tag
 rm -rf .next                                               # PowerShell: Remove-Item -Recurse -Force .next
 ```
 
-With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"`.
+With Django, update the Python package too: run `npx storio-editor init --django-dir <folder>` again (it reinstalls the copy shipped in the package and changes nothing else), or `pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.4.0#subdirectory=django-storio-elements-editor"`.
 
 ### Upgrading from `@brainicon/visual-cms`
 

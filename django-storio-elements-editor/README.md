@@ -20,7 +20,7 @@ Supports Django 4.2, 5.x and 6.x (tested on 4.2, 5.2 and 6.0).
 To install it yourself, from GitHub (the package lives in the `django-storio-elements-editor` folder of the repository):
 
 ```bash
-pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.3.4#subdirectory=django-storio-elements-editor"
+pip install "git+https://github.com/MostofaSeum/storio-elements-editor.git@v1.4.0#subdirectory=django-storio-elements-editor"
 ```
 
 Then `python -m storio_elements_editor setup --project <folder with manage.py> --frontend-origin http://localhost:3000` makes the settings and urls changes below automatically (add `--dry-run` to preview them), or follow the steps by hand.
@@ -156,11 +156,14 @@ All settings are optional. Put them in a `STORIO_EDITOR` dict:
 STORIO_EDITOR = {
     # Who may edit. A dotted path to a function that receives the request.
     "AUTHORIZE": "storio_elements_editor.permissions.is_staff_user",
+    # Your own login token (JWT, SSO...): a dotted path to a function that returns the user for the
+    # request, or None. Asked only when the request has an Authorization header. Default: None.
+    "AUTHENTICATE": None,
     # Restrict which page keys can be stored (use your frontend config's page keys).
     "ALLOWED_PAGES": None,          # e.g. ["home", "pricing", "site"]; include your global page key
     "MAX_BODY_BYTES": 1_048_576,    # largest section save (1 MB)
     "MAX_UPLOAD_BYTES": 5_242_880,  # largest image upload (5 MB)
-    "UPLOAD_DIR": "cms-uploads",    # folder inside your media storage
+    "UPLOAD_DIR": "cms-uploads",    # folder inside your media storage, or a function (request) -> folder
     "ALLOW_SVG": False,             # SVG files can contain scripts; enable only if you trust editors
     "TOKEN_LOGIN": True,            # POST auth/login (editors sign in from a React admin); False removes it
     "TOKEN_MAX_AGE": 43_200,        # seconds a sign-in lasts (12 hours)
@@ -184,6 +187,30 @@ def can_edit(request):
 ```python
 STORIO_EDITOR = {"AUTHORIZE": "myproject.cms.can_edit"}
 ```
+
+Your own login token, for example a JWT from Django REST framework. The returned user counts as signed in: writes need no CSRF token, and `updatedBy` shows the editor. Return `None` when the token is missing or invalid:
+
+```python
+# myproject/cms.py
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+def jwt_user(request):
+    return JWTAuthentication().authenticate(request)   # (user, token) or None; both are accepted
+```
+
+```python
+STORIO_EDITOR = {"AUTHENTICATE": "myproject.cms.jwt_user", "AUTHORIZE": "myproject.cms.can_edit"}
+```
+
+Read the token only from the `Authorization` header. Never return the session user from this function: the CSRF check exists for cookie logins.
+
+One upload folder per tenant (for example with django-tenants, which sets `request.tenant`):
+
+```python
+STORIO_EDITOR = {"UPLOAD_DIR": lambda request: f"cms-uploads/{request.tenant.schema_name}"}
+```
+
+The folder must be a relative path of letters, digits, `_`, `-` and `.`; anything else (such as `..`) is refused with a 500 error.
 
 ## Pages with [slug] or [id]
 

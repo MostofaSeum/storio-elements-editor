@@ -8,6 +8,9 @@ The token is a signed, expiring value (django.core.signing), so nothing is store
 database. It stops working when it expires or when the user's password changes. Send it as
 ``Authorization: Bearer <token>``. A request that carries a valid token needs no CSRF
 token, because it does not rely on cookies.
+
+A project with its own login (JWT, SSO…) sets AUTHENTICATE to a function that returns the user
+for a request, read from the Authorization header. That user is then treated like a token user.
 """
 
 import hashlib
@@ -16,7 +19,7 @@ from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.cache import cache
 
-from .conf import get_setting
+from .conf import get_authenticate, get_setting
 
 SALT = "visual_cms.token"
 
@@ -42,18 +45,42 @@ def _user_from_token(value: str):
     return user
 
 
+def _user_from_project_auth(request):
+    """The user returned by the project's AUTHENTICATE function, or None."""
+    authenticate = get_authenticate()
+    if authenticate is None:
+        return None
+    try:
+        result = authenticate(request)
+    except Exception:
+        return None
+    # Django REST framework authenticators return (user, token).
+    user = result[0] if isinstance(result, tuple) and result else result
+    if user is None or not getattr(user, "is_authenticated", False) or not getattr(user, "is_active", False):
+        return None
+    return user
+
+
 def attach_token_user(request):
     """
     If the request carries a valid Bearer token, make its user ``request.user`` (so every
     AUTHORIZE function and ``updated_by`` see the editor) and return it. Otherwise return None
     and leave ``request.user`` alone.
+
+    The token is either this package's own token (POST auth/login) or, when the AUTHENTICATE
+    setting is set, the project's own (for example a JWT from its login API). AUTHENTICATE is
+    asked only when the request has an Authorization header, so a session cookie can never
+    pass as a token and skip the CSRF check.
     """
     if hasattr(request, "_cms_token_user"):
         return request._cms_token_user
     user = None
-    scheme, _, value = request.META.get("HTTP_AUTHORIZATION", "").partition(" ")
+    header = request.META.get("HTTP_AUTHORIZATION", "")
+    scheme, _, value = header.partition(" ")
     if scheme.lower() == "bearer" and value.strip():
         user = _user_from_token(value.strip())
+    if user is None and header.strip():
+        user = _user_from_project_auth(request)
     request._cms_token_user = user
     if user is not None:
         request.user = user

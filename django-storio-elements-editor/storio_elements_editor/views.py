@@ -13,7 +13,8 @@ REST API used by @brainicon/storio-elements-editor (restAdapter / djangoAdapter)
     GET    collections/<key>/items     -> [{id, label}]  (see collection_views.py)
     GET    collections/<key>/items/<id> and PUT with {values}
 
-Editors are recognised by a staff session cookie or by ``Authorization: Bearer <token>``.
+Editors are recognised by a staff session cookie or by ``Authorization: Bearer <token>`` (this
+package's token, or the project's own when the AUTHENTICATE setting is set).
 """
 
 import json
@@ -29,7 +30,7 @@ from django.middleware.csrf import CsrfViewMiddleware, get_token
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
 from .auth import attach_token_user, clear_failures, is_locked_out, issue_token, record_failure
-from .conf import get_authorize, get_setting
+from .conf import get_authorize, get_setting, get_upload_dir
 from .models import CmsRecord
 
 KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,100}$")
@@ -184,7 +185,10 @@ def media(request):
     if request.method == "GET":
         if not _is_editor(request):
             return _error(401, "Not authorised.")
-        upload_dir = get_setting("UPLOAD_DIR")
+        try:
+            upload_dir = get_upload_dir(request)
+        except ValueError:
+            return _error(500, "The upload folder setting (UPLOAD_DIR) is invalid.")
         try:
             _dirs, files = default_storage.listdir(upload_dir)
         except (FileNotFoundError, NotImplementedError, OSError):
@@ -210,7 +214,10 @@ def media(request):
 
         allowed = _allowed_extensions()
         max_bytes = get_setting("MAX_UPLOAD_BYTES")
-        upload_dir = get_setting("UPLOAD_DIR")
+        try:
+            upload_dir = get_upload_dir(request)
+        except ValueError:
+            return _error(500, "The upload folder setting (UPLOAD_DIR) is invalid.")
         items = []
         for upload in files:
             ext = os.path.splitext(upload.name)[1].lower()
