@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Check that every file in package.json "exports" and "bin" was built
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = require('./package.json');
+          const files = Object.values(pkg.exports).flatMap((v) => (typeof v === 'string' ? [v] : Object.values(v)));
+          files.push(...Object.values(pkg.bin));
+          const missing = files.filter((f) => !fs.existsSync(f));
+          if (missing.length) { console.error('Missing build output:', missing.join(', ')); process.exit(1); }
+          console.log('All', files.length, 'export files exist.');
+          "
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+    defaults:
+      run:
+        working-directory: django-storio-elements-editor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: django-storio-elements-editor/pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e . pytest pytest-django
+      - run: python -m pytest -v

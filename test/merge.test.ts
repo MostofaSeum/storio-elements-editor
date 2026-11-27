@@ -47,6 +47,7 @@ describe('mergePageContent', () => {
   });
 
   it('ignores records of other pages and never mutates defaults', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const merged = mergePageContent<Record<string, any>>(home, [record({ page: 'other' })]);
     merged.hero.items.push('mutated');
     expect(home.defaults.hero).toEqual({ title: 'Default title', items: ['a'] });

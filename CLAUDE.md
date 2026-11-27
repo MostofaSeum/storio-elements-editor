@@ -8,8 +8,9 @@ Visual editor for Next.js sites (`@brainicon/storio-elements-editor`) plus a Dja
 - `dist/` is committed, because installing from GitHub has no build step.
 
 ## Commands
-- `npx tsc --noEmit`, `npx vitest run`
-- `cd django-storio-elements-editor && python -m django test --settings=tests.settings`
+- `npm run lint`, `npm run typecheck`, `npm test` (smoke tests are in `test/smoke.test.ts`)
+- `cd django-storio-elements-editor && python -m pytest` (needs `pip install -e . pytest pytest-django`; `python -m django test --settings=tests.settings` also works)
+- CI (`.github/workflows/ci.yml`) runs all of these on push and pull requests to `main`: Node 20 and 22, Python 3.11 and 3.12.
 
 ## Release
 1. Set the version in `package.json`, `package-lock.json`, `django-storio-elements-editor/pyproject.toml`, `storio_elements_editor/__init__.py`, both READMEs (the `#vX.Y.Z` install lines) and `examples/next-demo/package.json`.

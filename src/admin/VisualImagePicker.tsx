@@ -363,7 +363,6 @@ export const VisualImagePicker: React.FC<VisualImagePickerProps> = ({
                       >
                         {/* Photo Container */}
                         <div className="relative w-full aspect-video rounded-lg bg-slate-900/90 border border-slate-800/80 flex items-center justify-center overflow-hidden mb-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={photo.url}
                             alt={photo.title}
@@ -483,7 +482,6 @@ export const VisualImagePicker: React.FC<VisualImagePickerProps> = ({
               <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                 <span className="text-xs font-semibold text-slate-300">Live Preview:</span>
                 <div className="w-full h-40 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={customUrlInput}
                     alt="URL Preview"
@@ -551,7 +549,6 @@ export const VisualImagePicker: React.FC<VisualImagePickerProps> = ({
           {/* Thumbnail preview */}
           <div className="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-800/50 flex items-center justify-center overflow-hidden shrink-0 shadow-inner group-hover:border-purple-500 transition-colors">
             {value ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={value}
                 alt={label || 'Thumbnail'}

@@ -67,6 +67,7 @@ export function useCmsConfig(): CmsConfig {
  * Live content for a page: defaults overlaid by published overrides. Inside the
  * studio preview it also applies unsaved edits as you type and refetches after a save.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- loose default so untyped pages can read any field
 export function usePageContent<T = Record<string, any>>(
   pageKey: string,
   options: {
@@ -139,6 +140,7 @@ export function usePageContent<T = Record<string, any>>(
  * Live content of the global page (the one with `global: true`): header, footer, contact details,
  * SEO defaults, theme. Works on every page, and follows the editor's typing in the studio preview.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- loose default so untyped pages can read any field
 export function useSiteContent<T = Record<string, any>>(options: { initialData?: T } = {}): T {
   const { config } = useCmsContext();
   const globalPage = findGlobalPage(config);

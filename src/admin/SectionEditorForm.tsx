@@ -62,7 +62,7 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
   hasCustomOverride,
   isPublished: initialPublished,
   updatedAt,
-  updatedBy,
+  updatedBy: _updatedBy,
   onSave,
   onReset,
   onChangeDraft,

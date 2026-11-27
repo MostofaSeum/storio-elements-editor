@@ -13,6 +13,7 @@ function render(source: string, content: unknown): string {
   const mod: { exports: Record<string, unknown> } = { exports: {} };
   const fakeRequire = (id: string) => {
     if (id === 'react') return React;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     if (id === 'react/jsx-runtime') return require('react/jsx-runtime');
     if (id === 'next/link') return { __esModule: true, default: (p: { href: string; children: React.ReactNode }) => React.createElement('a', { href: p.href }, p.children) };
     if (id === '@brainicon/storio-elements-editor/site') return { CmsSection: (p: { children: React.ReactNode }) => p.children, CmsField: (p: { children: React.ReactNode }) => p.children, usePageContent: () => content };

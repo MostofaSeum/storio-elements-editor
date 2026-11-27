@@ -53,6 +53,7 @@
   "scripts": {
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
     "dev": "tsup --watch",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -69,9 +70,14 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/node": "^20.11.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.27.7",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
     "lucide-react": "^0.554.0",
     "next": "15.1.7",
     "react": "19.0.0",
@@ -79,6 +85,7 @@
     "react-hot-toast": "^2.6.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
+    "typescript-eslint": "^8.74.0",
     "vitest": "^2.1.0"
   },
   "keywords": [

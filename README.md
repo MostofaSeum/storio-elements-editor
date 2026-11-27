@@ -1,5 +1,7 @@
 # Storio Elements Editor
 
+[![CI](https://github.com/MostofaSeum/storio-elements-editor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MostofaSeum/storio-elements-editor/actions/workflows/ci.yml)
+
 `@brainicon/storio-elements-editor` (formerly `@brainicon/visual-cms`, see [Upgrading](#upgrading-from-brainiconvisual-cms)) is a visual editor for Next.js sites (with an optional Django backend). Add one page to your admin panel and your editors get:
 
 - a list of every page of the site,

@@ -43,3 +43,6 @@ TEMPLATES = [
 MEDIA_ROOT = tempfile.mkdtemp(prefix="storio-editor-media-")
 MEDIA_URL = "/media/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Fast hashing keeps the sign-in tests quick. Never use MD5 outside tests.
+PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
